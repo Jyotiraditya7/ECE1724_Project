@@ -50,6 +50,17 @@ watchesRouter.get("/:id", async (req, res) => {
   res.json(toWatchResponse(await findOwnWatch(req)));
 });
 
+/** Price history for the watch's graph: its stock's snapshots since the watch was created. */
+watchesRouter.get("/:id/prices", async (req, res) => {
+  const watch = await findOwnWatch(req);
+  const snapshots = await prisma.priceSnapshot.findMany({
+    where: { stockId: watch.stockId, timestamp: { gte: watch.createdAt } },
+    orderBy: { timestamp: "asc" },
+    select: { price: true, timestamp: true },
+  });
+  res.json(snapshots);
+});
+
 watchesRouter.patch("/:id", async (req, res) => {
   const existing = await findOwnWatch(req);
   const changes = updateWatchSchema.parse(req.body);
