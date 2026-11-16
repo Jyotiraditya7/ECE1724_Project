@@ -1,6 +1,8 @@
 import express from "express";
+import swaggerUi from "swagger-ui-express";
 import { requireUser, type ResolveUserId } from "./auth";
 import { errorHandler, notFoundHandler } from "./errors";
+import { buildOpenApiDocument } from "./openapi";
 import { watchesRouter } from "./watches/routes";
 
 export interface AppOptions {
@@ -20,6 +22,12 @@ export function createApp(options: AppOptions) {
   });
 
   app.use("/api/watches", requireUser(options.resolveUserId), watchesRouter);
+
+  const openApiDocument = buildOpenApiDocument();
+  app.get("/api/openapi.json", (_req, res) => {
+    res.json(openApiDocument);
+  });
+  app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
   app.use("/api", notFoundHandler);
   app.use(errorHandler);
