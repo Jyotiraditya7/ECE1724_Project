@@ -1,4 +1,5 @@
 import type { ErrorRequestHandler, RequestHandler } from "express";
+import { ZodError } from "zod";
 
 /** Throw from a route to send `{ error: message }` with the given status. */
 export class HttpError extends Error {
@@ -18,6 +19,16 @@ export const notFoundHandler: RequestHandler = (_req, res) => {
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof HttpError) {
     res.status(err.status).json({ error: err.message });
+    return;
+  }
+  if (err instanceof ZodError) {
+    res.status(400).json({
+      error: "Validation failed",
+      details: err.issues.map((issue) => ({
+        path: issue.path.map(String).join("."),
+        message: issue.message,
+      })),
+    });
     return;
   }
   if (isBodyParseError(err)) {
