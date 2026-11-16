@@ -1,10 +1,25 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
 import { prisma } from "../db";
-import { createWatchSchema } from "./schemas";
+import { HttpError } from "../errors";
+import { createWatchSchema, updateWatchSchema, watchIdSchema } from "./schemas";
 import { toWatchResponse } from "./serialize";
 
 /** Routes under /api/watches. Each one only touches the signed-in user's watches. */
 export const watchesRouter = Router();
+
+/**
+ * Loads the watch named by `:id` if it belongs to the caller. Another user's
+ * watch gets the same 404 as a missing one, so ids don't leak.
+ */
+async function findOwnWatch(req: Request) {
+  const id = watchIdSchema.parse(req.params["id"]);
+  const watch = await prisma.watch.findFirst({
+    where: { id, userId: req.userId },
+    include: { stock: true },
+  });
+  if (!watch) throw new HttpError(404, "Watch not found");
+  return watch;
+}
 
 watchesRouter.get("/", async (req, res) => {
   const watches = await prisma.watch.findMany({
@@ -29,4 +44,27 @@ watchesRouter.post("/", async (req, res) => {
     include: { stock: true },
   });
   res.status(201).json(toWatchResponse(watch));
+});
+
+watchesRouter.get("/:id", async (req, res) => {
+  res.json(toWatchResponse(await findOwnWatch(req)));
+});
+
+watchesRouter.patch("/:id", async (req, res) => {
+  const existing = await findOwnWatch(req);
+  const changes = updateWatchSchema.parse(req.body);
+
+  const watch = await prisma.watch.update({
+    where: { id: existing.id },
+    // New thresholds mean a fresh plan, so both alerts may fire again.
+    data: { ...changes, gainNotified: false, lossNotified: false },
+    include: { stock: true },
+  });
+  res.json(toWatchResponse(watch));
+});
+
+watchesRouter.delete("/:id", async (req, res) => {
+  const watch = await findOwnWatch(req);
+  await prisma.watch.delete({ where: { id: watch.id } });
+  res.status(204).end();
 });

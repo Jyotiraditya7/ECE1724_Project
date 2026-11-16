@@ -17,3 +17,13 @@ export const createWatchSchema = z.object({
 });
 
 export type CreateWatchInput = z.infer<typeof createWatchSchema>;
+
+/** Purchase price and thresholds are editable; the ticker is fixed once created. */
+export const updateWatchSchema = createWatchSchema
+  .omit({ ticker: true })
+  .partial()
+  .refine((changes) => Object.keys(changes).length > 0, {
+    message: "Provide at least one field to update",
+  });
+
+export const watchIdSchema = z.coerce.number().int().positive();
