@@ -1,0 +1,82 @@
+// Database schema for the stock watch app.
+// After editing, run `npm run db:migrate` to create a migration and
+// regenerate the client.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Core user fields in the shape Better Auth expects. Better Auth's CLI adds
+/// the Session, Account and Verification models next to this one; passwords
+/// live (hashed) in Account, not here.
+model User {
+  id            String   @id
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  watches Watch[]
+
+  @@map("user")
+}
+
+/// One row per ticker symbol, shared by every user watching it, so the poller
+/// fetches each symbol from Finnhub once per cycle no matter how many watches
+/// track it.
+model Stock {
+  id             Int       @id @default(autoincrement())
+  ticker         String    @unique
+  /// Latest price written by the poller; null until the first successful poll.
+  currentPrice   Float?
+  priceUpdatedAt DateTime?
+  createdAt      DateTime  @default(now())
+
+  watches   Watch[]
+  snapshots PriceSnapshot[]
+}
+
+/// One user's monitoring rule for one stock.
+model Watch {
+  id            Int      @id @default(autoincrement())
+  userId        String
+  stockId       Int
+  purchasePrice Float
+  /// Alert when the price rises this many percent above purchase (> 0).
+  gainPct       Float
+  /// Alert when the price falls to this percent from purchase (<= 0, e.g. -5).
+  lossPct       Float
+  /// Notification status: set by the poller once that side's alert fires so it
+  /// is not repeated every cycle; cleared when the user edits the watch.
+  gainNotified  Boolean  @default(false)
+  lossNotified  Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stock Stock @relation(fields: [stockId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([stockId])
+}
+
+/// Price history for the watch graphs: one row per stock per poll. Kept in
+/// PostgreSQL rather than object storage so each poll is a single insert and
+/// a graph is a single indexed range query.
+model PriceSnapshot {
+  id        Int      @id @default(autoincrement())
+  stockId   Int
+  price     Float
+  timestamp DateTime @default(now())
+
+  stock Stock @relation(fields: [stockId], references: [id], onDelete: Cascade)
+
+  @@index([stockId, timestamp])
+}
