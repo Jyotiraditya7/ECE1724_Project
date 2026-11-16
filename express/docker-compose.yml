@@ -1,0 +1,25 @@
+# Local PostgreSQL for development and tests.
+#   docker compose up -d      start it
+#   docker compose down       stop it (data is kept in the named volume)
+# Host port 5433 avoids clashing with a locally installed PostgreSQL on 5432.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: stockwatch
+      POSTGRES_PASSWORD: stockwatch
+      POSTGRES_DB: stockwatch
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Creates the separate stockwatch_test database used by `npm test`.
+      - ./docker/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stockwatch"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+volumes:
+  pgdata:

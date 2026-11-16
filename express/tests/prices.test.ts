@@ -1,0 +1,61 @@
+import { beforeEach, describe, expect, it } from "vitest";
+import { prisma } from "../src/db";
+import { asUser, createUser, resetDb } from "./helpers";
+
+const HOUR = 60 * 60 * 1000;
+const createdAt = new Date("2026-11-10T15:00:00Z");
+
+async function createWatch(userId: string, ticker: string) {
+  const res = await asUser(userId)
+    .post("/api/watches")
+    .send({ ticker, purchasePrice: 100, gainPct: 10, lossPct: -5 });
+  await prisma.watch.update({ where: { id: res.body.id }, data: { createdAt } });
+  return res.body.id as number;
+}
+
+async function addSnapshot(ticker: string, price: number, offsetHours: number) {
+  const stock = await prisma.stock.findUniqueOrThrow({ where: { ticker } });
+  await prisma.priceSnapshot.create({
+    data: { stockId: stock.id, price, timestamp: new Date(createdAt.getTime() + offsetHours * HOUR) },
+  });
+}
+
+beforeEach(async () => {
+  await resetDb();
+  await createUser("alice");
+  await createUser("bob");
+});
+
+describe("GET /api/watches/:id/prices", () => {
+  it("returns the stock's prices since the watch was created, oldest first", async () => {
+    const id = await createWatch("alice", "AAPL");
+    await addSnapshot("AAPL", 101, 2);
+    await addSnapshot("AAPL", 99, -1); // before the watch existed
+    await addSnapshot("AAPL", 100, 1);
+
+    const res = await asUser("alice").get(`/api/watches/${id}/prices`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([
+      { price: 100, timestamp: "2026-11-10T16:00:00.000Z" },
+      { price: 101, timestamp: "2026-11-10T17:00:00.000Z" },
+    ]);
+  });
+
+  it("only includes prices for the watch's own stock", async () => {
+    const id = await createWatch("alice", "AAPL");
+    await createWatch("alice", "MSFT");
+    await addSnapshot("AAPL", 100, 1);
+    await addSnapshot("MSFT", 400, 1);
+
+    const res = await asUser("alice").get(`/api/watches/${id}/prices`);
+
+    expect(res.body.map((p: { price: number }) => p.price)).toEqual([100]);
+  });
+
+  it("hides another user's watch behind a 404", async () => {
+    const id = await createWatch("alice", "AAPL");
+    const res = await asUser("bob").get(`/api/watches/${id}/prices`);
+    expect(res.status).toBe(404);
+  });
+});
