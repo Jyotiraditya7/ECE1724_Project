@@ -64,6 +64,15 @@ watchesRouter.get("/:id/prices", async (req, res) => {
   res.json(await findPriceHistory(await findOwnWatch(req)));
 });
 
+/** The same price history as a CSV file download, built from the database on request. */
+watchesRouter.get("/:id/prices.csv", async (req, res) => {
+  const watch = await findOwnWatch(req);
+  const prices = await findPriceHistory(watch);
+  const rows = prices.map((p) => `${p.timestamp.toISOString()},${p.price}\n`);
+  res.attachment(`${watch.stock.ticker}-prices.csv`);
+  res.send("timestamp,price\n" + rows.join(""));
+});
+
 watchesRouter.patch("/:id", async (req, res) => {
   const existing = await findOwnWatch(req);
   const changes = updateWatchSchema.parse(req.body);

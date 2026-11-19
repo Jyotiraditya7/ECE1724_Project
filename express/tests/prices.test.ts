@@ -59,3 +59,46 @@ describe("GET /api/watches/:id/prices", () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe("GET /api/watches/:id/prices.csv", () => {
+  it("returns the same price history as CSV rows, oldest first", async () => {
+    const id = await createWatch("alice", "AAPL");
+    await addSnapshot("AAPL", 101.25, 2);
+    await addSnapshot("AAPL", 99, -1); // before the watch existed
+    await addSnapshot("AAPL", 100, 1);
+
+    const res = await asUser("alice").get(`/api/watches/${id}/prices.csv`);
+
+    expect(res.status).toBe(200);
+    expect(res.text).toBe(
+      "timestamp,price\n" +
+        "2026-11-10T16:00:00.000Z,100\n" +
+        "2026-11-10T17:00:00.000Z,101.25\n",
+    );
+  });
+
+  it("is served as a CSV file download named after the ticker", async () => {
+    const id = await createWatch("alice", "BRK.B");
+
+    const res = await asUser("alice").get(`/api/watches/${id}/prices.csv`);
+
+    expect(res.headers["content-type"]).toBe("text/csv; charset=utf-8");
+    // Quotes around the filename are optional when it has no special characters.
+    expect(res.headers["content-disposition"]).toMatch(/^attachment; filename="?BRK\.B-prices\.csv"?$/);
+  });
+
+  it("has only the header row when there is no history yet", async () => {
+    const id = await createWatch("alice", "AAPL");
+
+    const res = await asUser("alice").get(`/api/watches/${id}/prices.csv`);
+
+    expect(res.text).toBe("timestamp,price\n");
+  });
+
+  it("hides another user's watch behind a 404", async () => {
+    const id = await createWatch("alice", "AAPL");
+    const res = await asUser("bob").get(`/api/watches/${id}/prices.csv`);
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: "Watch not found" });
+  });
+});
