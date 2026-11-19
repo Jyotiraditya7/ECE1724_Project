@@ -50,15 +50,27 @@ watchesRouter.get("/:id", async (req, res) => {
   res.json(toWatchResponse(await findOwnWatch(req)));
 });
 
-/** Price history for the watch's graph: its stock's snapshots since the watch was created. */
-watchesRouter.get("/:id/prices", async (req, res) => {
-  const watch = await findOwnWatch(req);
-  const snapshots = await prisma.priceSnapshot.findMany({
+/** The watch's stock prices since the watch was created, oldest first. */
+function findPriceHistory(watch: { stockId: number; createdAt: Date }) {
+  return prisma.priceSnapshot.findMany({
     where: { stockId: watch.stockId, timestamp: { gte: watch.createdAt } },
     orderBy: { timestamp: "asc" },
     select: { price: true, timestamp: true },
   });
-  res.json(snapshots);
+}
+
+/** Price history for the watch's graph. */
+watchesRouter.get("/:id/prices", async (req, res) => {
+  res.json(await findPriceHistory(await findOwnWatch(req)));
+});
+
+/** The same price history as a CSV file download, built from the database on request. */
+watchesRouter.get("/:id/prices.csv", async (req, res) => {
+  const watch = await findOwnWatch(req);
+  const prices = await findPriceHistory(watch);
+  const rows = prices.map((p) => `${p.timestamp.toISOString()},${p.price}\n`);
+  res.attachment(`${watch.stock.ticker}-prices.csv`);
+  res.send("timestamp,price\n" + rows.join(""));
 });
 
 watchesRouter.patch("/:id", async (req, res) => {

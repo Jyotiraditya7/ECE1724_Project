@@ -131,6 +131,29 @@ registry.registerPath({
   },
 });
 
+registry.registerPath({
+  method: "get",
+  path: "/api/watches/{id}/prices.csv",
+  tags: ["Watches"],
+  summary: "Download the same price history as a CSV file",
+  request: { params: idParams },
+  responses: {
+    200: {
+      description: "CSV file named `<TICKER>-prices.csv`, oldest row first",
+      content: {
+        "text/csv": {
+          schema: z.string().meta({
+            example: "timestamp,price\n2026-11-10T16:00:00.000Z,231.5\n",
+          }),
+        },
+      },
+    },
+    400: errors[400],
+    401: errors[401],
+    404: errors[404],
+  },
+});
+
 export function buildOpenApiDocument() {
   return new OpenApiGeneratorV3(registry.definitions).generateDocument({
     openapi: "3.0.3",
