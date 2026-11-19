@@ -44,6 +44,11 @@ Interactive docs: `/api/docs` (Swagger UI); raw spec: `/api/openapi.json`.
 | PATCH | `/api/watches/:id` | Edit purchase price / thresholds (clears notification status) |
 | DELETE | `/api/watches/:id` | Delete a watch |
 | GET | `/api/watches/:id/prices` | Price history since the watch was created, oldest first |
+| GET | `/api/watches/:id/prices.csv` | The same history as a CSV download (`timestamp,price`) |
+
+The CSV is built from PostgreSQL on each request, so nothing is stored for it. On the
+Watch Details page a plain link works as the download button, since the browser sends the
+login cookie with it: `<a href={`/api/watches/${id}/prices.csv`}>Download CSV</a>`.
 
 Validation (from the proposal): ticker is 1-12 letters, digits, `.` or `-` (upper-cased);
 `purchasePrice > 0`; `gainPct > 0`; `lossPct <= 0` (e.g. `-5` means alert at a 5% drop).

@@ -12,6 +12,13 @@ describe("API documentation", () => {
     expect(methods("/api/watches")).toEqual(["get", "post"]);
     expect(methods("/api/watches/{id}")).toEqual(["delete", "get", "patch"]);
     expect(methods("/api/watches/{id}/prices")).toEqual(["get"]);
+    expect(methods("/api/watches/{id}/prices.csv")).toEqual(["get"]);
+  });
+
+  it("documents the CSV download as text/csv", async () => {
+    const res = await request(app).get("/api/openapi.json");
+    const ok = res.body.paths["/api/watches/{id}/prices.csv"]?.get?.responses?.["200"];
+    expect(Object.keys(ok?.content ?? {})).toEqual(["text/csv"]);
   });
 
   it("documents request bodies from the same Zod schemas used for validation", async () => {
