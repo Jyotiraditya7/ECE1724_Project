@@ -1,15 +1,8 @@
 // This component renders a form for creating or editing a paper.
 
 import type { SubmitEvent } from "react";
-import type { User, LoginFormData } from "../types";
+import type { LoginFormData } from "../types";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
-
-const TEMP_dummy_creds: User = {
-	id: -1,
-	email: "abc@mail.com",
-	password: "123abc"
-}
 
 const empty_form: LoginFormData = {
 	email: "",
@@ -17,57 +10,39 @@ const empty_form: LoginFormData = {
 	confirmPass: ""
 }
 
-export default function LoginForm() {
-	const navigate = useNavigate();
+type LoginFormProps = {
+	createNew: boolean;
+	onSubmit: (payload: LoginFormData) => Promise<boolean>;
+}
 
-	const [createNew, setCreateNew] = useState(false);	// Is the user logging in, or creating a new account?
+export default function LoginForm({createNew, onSubmit }: LoginFormProps) {
+
 	const [submitting, setSubmitting] = useState(false);// Prevent multiple form submissions
 	const [form, setForm] = useState(empty_form);
 
-	// Dummy function for checking account credentials
-	async function TEMP_check_credentials() {
-		if (form.email === TEMP_dummy_creds.email && form.password == TEMP_dummy_creds.password) {
-			navigate(`/users/${TEMP_dummy_creds.id}`);
-		} else {
-			return false;
+	// Clear form when we switch between logging in and creating account
+	useEffect(() => {
+		function emptyForm() {
+			setForm(empty_form);
 		}
-	}
+		emptyForm();
+	}, [createNew]);
 
-	// Dummy function for seeing if account already exists and if password and confirm password form fields match
-	async function TEMP_create_new_acc() {
-		if (form.email === TEMP_dummy_creds.email) {
-			return false;
-		}
-		if (form.password === form.confirmPass) {
-			navigate(`/users/${TEMP_dummy_creds.id}`);
-		} else {
-			return false;
-		}
-	}
-
+	// Disable form while calling onSubmit
 	async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
 		event.preventDefault();
 
 		if (submitting) return;
 		setSubmitting(true);
-
-		// Are we creating a new account or logging in?
-		if (!createNew) {
-			const login_success = await (TEMP_check_credentials());
-			if (!login_success) {
-				setSubmitting(false);
-			}
-		} else {
-			const create_success = await (TEMP_create_new_acc());
-			if (!create_success) {
-				setSubmitting(false);
-			}
+		try {
+			onSubmit(form);
+		} finally {
+			setSubmitting(false);
 		}
 	}
 
 	return (
 		<div>
-			<h2>{createNew ? "Create New Account" : "Sign In"}</h2>
 			<form
 	      noValidate
 	      onSubmit={handleSubmit}
@@ -99,14 +74,24 @@ export default function LoginForm() {
 	          }}
 	        />
 				</div>
+				{createNew && <div>
+			     <label htmlFor="confirm">Confirm Password:</label>
+			     <input
+			       id="confirm"
+			       name="confirm"
+			       type="text"
+			       value={form.confirmPass}
+			       disabled={submitting}
+			       onChange={(event) => {
+							setForm({...form, confirmPass: event.target.value})
+			       }}
+			     />
+				</div>}
 				<div>
 	        <button type="submit" disabled={submitting}>
 	          {createNew ? "Create New Account" : "Sign In"}
 	        </button>
 				</div>
-
-	      {/* TODO: Render validation error if present */}
-	      {/*error && <div className="error">{error}</div>*/}
 	    </form>
 		</div>
 	);
