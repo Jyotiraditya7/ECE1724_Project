@@ -19,28 +19,34 @@ export default function Login() {
 	// Dummy function for checking account credentials
 	async function TEMP_check_credentials(form: LoginFormData) {
 		if (form.email === TEMP_dummy_creds.email && form.password == TEMP_dummy_creds.password) {
-			return true;
+			return {error: null};
 		} else {
-			return false;
+			return {error: "Invalid Credentials"};
 		}
 	}
 
-	// Dummy function for seeing if account already exists and if password and confirm password form fields match
+	// Dummy function for seeing if account already exists
 	async function TEMP_create_new_acc(form: LoginFormData) {
 		if (form.email === TEMP_dummy_creds.email) {
-			return false;
-		} else {
-			return true;
+			return {error:"Error: Email already registered"};
 		}
+		if (form.username === TEMP_dummy_creds.id) {
+			return {error: "Error: Username already registered"};
+		}
+		return { error: null };
 	}
 
 	async function handleLogin(form: LoginFormData) {
 		// Validate form inputs
-		if (typeof(form.email) != 'string' || form.email.trim().length == 0) {
+		if (createNew && form.username.trim().length == 0) {
+			setMessage("Error: Please input a username");
+			return false;
+    }
+		if (form.email.trim().length == 0) {
 			setMessage("Error: Please input an email");
 			return false;
 		}
-		if (typeof(form.password) != 'string' || form.password.trim().length == 0) {
+		if (form.password.trim().length == 0) {
 			setMessage("Error: Please input a password");
 			return false;
 		}
@@ -51,19 +57,17 @@ export default function Login() {
 
 		// Are we creating a new account or logging in?
 		if (!createNew) {
-			const login_success = await (TEMP_check_credentials(form));	// TODO: connect to auth
-			if (!login_success) {
-				setMessage("Invalid Credentials");
-				return false;
+			const login_result = await (TEMP_check_credentials(form));	// TODO: connect to auth
+			if (login_result.error) {
+				setMessage(login_result.error);
 			} else {
 				setMessage("Logging in...");
 				navigate(`/users/${TEMP_dummy_creds.id}`)
 			}
 		} else {
-			const create_success = await (TEMP_create_new_acc(form)); // TODO: connect to auth/backend
-			if (!create_success) {
-				setMessage("Error: Unable to create new account");
-				return false
+			const create_acc_result = await (TEMP_create_new_acc(form)); // TODO: connect to auth/backend
+			if (create_acc_result.error) {
+				setMessage(create_acc_result.error);
 			} else {
 				setMessage("Creating Account...");
 				navigate(`/users/${TEMP_dummy_creds.id}`)

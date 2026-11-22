@@ -23,6 +23,7 @@ export type Watch = {
 
 // For Frontend Form States
 export type LoginFormData = {
+	username: string;
 	email: string;
 	password: string;
 	confirmPass: string;

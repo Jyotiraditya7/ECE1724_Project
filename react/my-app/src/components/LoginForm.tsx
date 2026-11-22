@@ -5,6 +5,7 @@ import type { LoginFormData } from "../types";
 import { useEffect, useState } from "react";
 
 const empty_form: LoginFormData = {
+	username: "",
 	email: "",
 	password: "",
 	confirmPass: ""
@@ -48,6 +49,19 @@ export default function LoginForm({createNew, onSubmit }: LoginFormProps) {
 	      onSubmit={handleSubmit}
     	>
 	      <div>
+					{createNew && <div>
+				     <label htmlFor="Username">Username:</label>
+				     <input
+				       id="username"
+				       name="username"
+				       type="text"
+				       value={form.username}
+				       disabled={submitting}
+				       onChange={(event) => {
+								setForm({...form, username: event.target.value})
+				       }}
+				     />
+					</div>}
 	        <label htmlFor="email">Email:</label>
 	        <input
 	          id="email"
