@@ -31,6 +31,13 @@ volume is created. If you started the container before that file existed, run
 | `npm run db:migrate` | Create/apply migrations after editing `prisma/schema.prisma` |
 | `npm run db:seed` | Replace the demo data |
 
+## CI
+
+Every PR into `main` runs [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) on GitHub:
+the backend typecheck and tests against a fresh Postgres, and the frontend lint and build.
+CI has no Finnhub key or SMTP settings, so tests must use fakes for outside services instead
+of calling them.
+
 ## API
 
 Interactive docs: `/api/docs` (Swagger UI); raw spec: `/api/openapi.json`.
