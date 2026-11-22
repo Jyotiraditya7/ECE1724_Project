@@ -6,7 +6,7 @@ import type { User, LoginFormData } from "../types";
 import { useNavigate } from "react-router";
 
 const TEMP_dummy_creds: User = {
-	id: -1,
+	id: "demo-user",
 	email: "abc@mail.com",
 	password: "123abc"
 }
