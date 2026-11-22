@@ -1,6 +1,6 @@
 // This component serves as the login page. Users can sign into their dashboard, or create a new account
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import LoginForm from "../components/LoginForm";
 import type { User, LoginFormData } from "../types";
 import { useNavigate } from "react-router";
@@ -15,14 +15,6 @@ export default function Login() {
 	const navigate = useNavigate();
 	const [createNew, setCreateNew] = useState(false);	// Is the user logging in, or creating a new account?
 	const [message, setMessage] = useState<string|null>(null);
-
-	// Clear message when we switch between logging in and creating account
-	useEffect(() => {
-		function clearMsg() {
-			setMessage(null);
-		}
-		clearMsg()
-	}, [createNew]);
 
 	// Dummy function for checking account credentials
 	async function TEMP_check_credentials(form: LoginFormData) {
@@ -84,7 +76,10 @@ export default function Login() {
 			<h1>Money Watch</h1>
 			<h2>{createNew ? "Register for MoneyWatch" : "Sign In to MoneyWatch"}</h2>
 			<LoginForm createNew={createNew} onSubmit={handleLogin} />
-			<button type='button' onClick={() => setCreateNew(!createNew)}>{createNew ? "Return to Sign In" : "Create a New Account"}</button>
+			<button type='button' onClick={() => {
+				setCreateNew(!createNew);
+				setMessage(null);
+			}}>{createNew ? "Return to Sign In" : "Create a New Account"}</button>
 			{message && <div>{message}</div>}
 		</div>
 	);
