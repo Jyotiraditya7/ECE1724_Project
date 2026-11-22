@@ -4,6 +4,7 @@ import { requireUser, type ResolveUserId } from "./auth";
 import { errorHandler, notFoundHandler } from "./errors";
 import { buildOpenApiDocument } from "./openapi";
 import { watchesRouter } from "./watches/routes";
+import { createNotificationRoutes } from "./notifications/routes";
 
 export interface AppOptions {
   resolveUserId: ResolveUserId;
@@ -22,6 +23,11 @@ export function createApp(options: AppOptions) {
   });
 
   app.use("/api/watches", requireUser(options.resolveUserId), watchesRouter);
+  app.use(
+    "/api/alerts",
+    requireUser(options.resolveUserId),
+    createNotificationRoutes(options.resolveUserId)
+  );
 
   const openApiDocument = buildOpenApiDocument();
   app.get("/api/openapi.json", (_req, res) => {
@@ -32,4 +38,5 @@ export function createApp(options: AppOptions) {
   app.use("/api", notFoundHandler);
   app.use(errorHandler);
   return app;
+  
 }
