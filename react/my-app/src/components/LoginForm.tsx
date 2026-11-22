@@ -13,7 +13,7 @@ const empty_form: LoginFormData = {
 
 type LoginFormProps = {
 	createNew: boolean;
-	onSubmit: (payload: LoginFormData) => Promise<boolean>;
+	onSubmit: (payload: LoginFormData) => void;
 }
 
 export default function LoginForm({createNew, onSubmit }: LoginFormProps) {

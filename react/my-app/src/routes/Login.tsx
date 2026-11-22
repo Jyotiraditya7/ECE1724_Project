@@ -40,19 +40,15 @@ export default function Login() {
 		// Validate form inputs
 		if (createNew && form.username.trim().length == 0) {
 			setMessage("Error: Please input a username");
-			return false;
     }
 		if (form.email.trim().length == 0) {
 			setMessage("Error: Please input an email");
-			return false;
 		}
 		if (form.password.trim().length == 0) {
 			setMessage("Error: Please input a password");
-			return false;
 		}
 		if (createNew && !(form.password === form.confirmPass)) {
 			setMessage("Error: Password and Confirm Password do not match");
-			return false;
     }
 
 		// Are we creating a new account or logging in?

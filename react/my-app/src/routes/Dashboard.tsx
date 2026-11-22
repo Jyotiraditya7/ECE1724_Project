@@ -1,7 +1,8 @@
 import WatchCard from "../components/WatchCard";
+import WatchForm from "../components/WatchForm";
 import { useNavigate, useParams } from "react-router";
 import { useEffect, useState } from "react";
-import type { Watch } from "../types";
+import type { Watch, WatchPayload} from "../types";
 
 export default function Dashboard() {
 	const params = useParams();
@@ -14,10 +15,6 @@ export default function Dashboard() {
 	useEffect(() => {
 		async function loadWatches() {
 			try {
-				// TODO: Fetch papers from GET /api/papers
-				// TODO: If response is not ok, throw an Error
-				// TODO: Parse JSON as PapersListResponse
-				// TODO: Set papers state using data.papers
 				const response = await fetch("/api/watches");
 
 				if (!response.ok) {
@@ -41,8 +38,26 @@ export default function Dashboard() {
 		navigate('/');
 	}
 
-	async function handleCreate() {
-		navigate(`/users/${params.id}/watches/-1`);
+	async function handleCreate(payload: WatchPayload) {
+		try {
+			const response = await fetch("/api/watches", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(payload),
+			})
+
+			if (!response.ok) {
+				throw new Error("Error creating paper");
+			}
+			const data = await response.json();
+			setWatches((prev) => [...prev, data]);
+			navigate(`/users/${params.id}/watches/${data.id}`);
+		} catch {
+      // TODO: Set message to "Error creating paper"
+      // TODO: Return false
+			return;
+    }
+
 	}
 
 	async function handleEdit(id: number) {
@@ -83,11 +98,23 @@ export default function Dashboard() {
 		<div>
 			<h1>Money Watch</h1>
 			<h2>{`Welcome Back ${params.id}`}</h2>
-			{watches.map((watch) => (
-				<WatchCard id={watch.id} ticker={watch.ticker} triggered={ watch.gainNotified || watch.lossNotified} onView={handleEdit} onDelete={handleDelete}></WatchCard>
-			))}
+			{loading ? (
+        <div><p>Loading StockWatches...</p></div>
+      ) : loadError ? (
+        <div><p>Error Loading StockWatches</p></div>
+				) : watches.length == 0 ? (
+					<div><p>No StockWatches Found</p></div>
+      ) : (watches.map((watch) => (
+				<WatchCard
+					id={watch.id}
+					ticker={watch.ticker}
+					triggered={watch.gainNotified || watch.lossNotified}
+					onView={handleEdit}
+					onDelete={handleDelete}
+				/>
+			)))}
+			<WatchForm onSubmit={handleCreate}></WatchForm>
 			<section>
-				<button type='button' onClick={handleCreate}>Create New Watch</button>
 				<button type='button' onClick={handleExport}>Download Portfolio</button>
 				<button type='button' onClick={handleImport}>Upload Portfolio</button>
 			</section>

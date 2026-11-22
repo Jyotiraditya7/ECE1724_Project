@@ -28,3 +28,18 @@ export type LoginFormData = {
 	password: string;
 	confirmPass: string;
 }
+
+export type WatchFormData = {
+	ticker: string;
+	purchasePrice: string;
+	gainPct: string;
+	lossPct: string;
+}
+
+// For sending to Backend API
+export type WatchPayload = {
+	ticker: string;
+	purchasePrice: number;
+	gainPct: number;
+	lossPct: number;
+}
