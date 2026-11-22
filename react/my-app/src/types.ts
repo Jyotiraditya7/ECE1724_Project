@@ -1,4 +1,4 @@
-// For API
+// For GET API
 export type User = {
 	id: string;
 	email: string;
@@ -9,15 +9,16 @@ export type Watch = {
 	id: number;
 	ticker: string;
 	purchasePrice: number;
-	currPrice: number;
-	updateTime: Date;
 	gainPct: number;
 	lossPct: number;
-	triggered: boolean;
-	user_id: string;
-}
-
-export type Stock = {
+	gainNotified: boolean;
+	lossNotified: boolean;
+	createdAt: Date;
+	updatedAt: Date;
+	currentPrice: number;
+	priceUpdatedAt: Date;
+	changeAmount: number;
+	changePct: number;
 }
 
 // For Frontend Form States

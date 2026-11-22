@@ -7,12 +7,16 @@ const TEMP_WATCH: Watch = {
 	id: -1,
 	ticker: "AAPL",
 	purchasePrice: 100,
-	currPrice: 102,
-	updateTime: new Date(),
 	gainPct:10,
 	lossPct:5,
-	triggered: false,
-	user_id:'demo-test'
+	gainNotified: false,
+	lossNotified: false,
+	createdAt: new Date(),
+	updatedAt: new Date(),
+	currentPrice: 102,
+	priceUpdatedAt: new Date,
+	changeAmount: 2,
+	changePct: 2
 }
 
 export default function WatchDetails() {
@@ -24,7 +28,7 @@ export default function WatchDetails() {
 	return (
 		<div>
 			<h1>Money Watch</h1>
-			<button type='button' onClick={()=>navigate(`/users/${watch.user_id}`)}>Back</button>
+			<button type='button' onClick={()=>navigate(`/users/${params.userid}`)}>Back</button>
 			<table>
 				<tr>
 					<th>Ticker</th>
@@ -38,14 +42,14 @@ export default function WatchDetails() {
 				<tr>
 					<td>{watch.ticker}</td>
 					<td>{watch.purchasePrice}</td>
-					<td>{watch.currPrice}</td>
-					<td>{watch.updateTime.toLocaleDateString()}</td>
+					<td>{watch.currentPrice}</td>
+					<td>{watch.updatedAt.toLocaleDateString()}</td>
 					<td>{watch.gainPct}</td>
 					<td>{watch.lossPct}</td>
-					<td>{watch.triggered ? "Triggered" : "Not Triggered"}</td>
+					<td>{watch.gainNotified ? "Triggered" : "Not Triggered"}</td>
 				</tr>
 			</table>
-			<button type='button' onClick={()=>navigate(`/users/${watch.user_id}`)}>Save Changes</button>
+			<button type='button' onClick={()=>navigate(`/users/${params.userid}`)}>Save Changes</button>
 		</div>
 	);
 }
