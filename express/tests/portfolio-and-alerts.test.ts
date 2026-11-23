@@ -180,6 +180,8 @@ describe("Portfolio export, import, prices.csv, and alert recipient behavior", (
 
     const watchId = created.body.id as number;
 
+    vi.stubEnv("FINNHUB_API_KEY", "test-finnhub-key");
+
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify({ c: 120 }), {
         status: 200,
