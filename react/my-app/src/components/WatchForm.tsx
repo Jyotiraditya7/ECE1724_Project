@@ -12,11 +12,11 @@ const empty_form: WatchFormData = {
 }
 
 type WatchFormProps = {
-	watch?: WatchFormData
+	watch?: WatchFormData;
 	onSubmit: (payload: WatchPayload) => void;
 }
 
-export default function LoginForm({watch=null, onSubmit}: WatchFormProps) {
+export default function LoginForm({watch, onSubmit}: WatchFormProps) {
 
 	const [submitting, setSubmitting] = useState(false);// Prevent multiple form submissions
 	const [error, setError] = useState<string | null>(null);
