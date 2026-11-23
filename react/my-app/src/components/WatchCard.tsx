@@ -1,4 +1,3 @@
-import type { Watch } from "../types"
 import { FiAlertCircle} from "react-icons/fi"
 
 type WatchCardProps = {
