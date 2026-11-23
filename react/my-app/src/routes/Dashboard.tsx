@@ -47,7 +47,7 @@ export default function Dashboard() {
 			})
 
 			if (!response.ok) {
-				throw new Error("Error creating paper");
+				throw new Error("Error creating watch");
 			}
 			const data = await response.json();
 			setWatches((prev) => [...prev, data]);
@@ -57,19 +57,13 @@ export default function Dashboard() {
       // TODO: Return false
 			return;
     }
-
-	}
-
-	async function handleEdit(id: number) {
-		navigate(`/users/${params.id}/watches/${id}`);
 	}
 
 	async function handleDelete(id: number, ticker: string) {
 		const ok = confirm(`Are you sure you want to delete this watch for ${ticker} stock?`);
 		if (!ok) return;
-		/*
 		try {
-			const response = await fetch(`/api/papers/${paper.id}`, {
+			const response = await fetch(`/api/watches/${id}`, {
 				method: "DELETE"
 			});
 
@@ -77,13 +71,10 @@ export default function Dashboard() {
 				throw new Error("Error deleting paper");
 			}
 
-			setPapers((prev) => prev.filter((item) => item.id !== paper.id));
-			setMessage("Paper deleted successfully");
+			setWatches((prev) => prev.filter((item) => item.id !== id));
 		} catch {
 		  // TODO: Set message to "Error deleting paper"
-			setMessage("Error deleting paper");
 		}
-		*/
 	}
 
 	async function handleExport() {
@@ -109,7 +100,7 @@ export default function Dashboard() {
 					id={watch.id}
 					ticker={watch.ticker}
 					triggered={watch.gainNotified || watch.lossNotified}
-					onView={handleEdit}
+					onView={()=>navigate(`/users/${params.id}/watches/${watch.id}`)}
 					onDelete={handleDelete}
 				/>
 			)))}
