@@ -1,30 +1,30 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import type { Watch } from "../types";
+import type { Watch, WatchPayload} from "../types";
 import WatchForm from "../components/WatchForm";
 
 // This will all be fetched from backend using Watch id number passed in as route param
-const TEMP_WATCH: Watch = {
+const empty_watch: Watch = {
 	id: -1,
-	ticker: "AAPL",
-	purchasePrice: 100,
-	gainPct:10,
-	lossPct:5,
+	ticker: "XYZ",
+	purchasePrice: 0,
+	gainPct:0,
+	lossPct:0,
 	gainNotified: false,
 	lossNotified: false,
 	createdAt: "",
 	updatedAt: "",
-	currentPrice: 102,
+	currentPrice: 0,
 	priceUpdatedAt: "",
-	changeAmount: 2,
-	changePct: 2
+	changeAmount: 0,
+	changePct: 0
 }
 
 export default function WatchDetails() {
 	const params = useParams();
 	const navigate = useNavigate();
 
-	const [watch, setWatch] = useState(TEMP_WATCH);
+	const [watch, setWatch] = useState(empty_watch);
 	const [loading, setLoading] = useState(true);
 	const [loadError, setLoadError] = useState(false);
 
@@ -49,8 +49,23 @@ export default function WatchDetails() {
 		loadWatch();
 	}, [params.watchid]);
 
-	async function handleSubmit() {
-		navigate(`/users/${params.userid}`);
+	async function handleSubmit(payload: WatchPayload) {
+		try {
+			const response = await fetch(`/api/watches/${params.watchid}`, {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(payload),
+			})
+
+			if (!response.ok) {
+				throw new Error("Error updating watch");
+			}
+			navigate(`/users/${params.userid}`);
+		} catch {
+      // TODO: Set message to "Error creating paper"
+      // TODO: Return false
+			return;
+    }
   }
 
 	return (
