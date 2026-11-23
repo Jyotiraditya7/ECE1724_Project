@@ -166,9 +166,14 @@ export default function LoginForm({watch=null, onSubmit}: WatchFormProps) {
 				<div>
 					<button type="submit" disabled={submitting}>{ watch ? "Update Stock Watch" : "Submit new Stock Watch"}</button>
 					<button type="button" disabled={submitting} onClick={() => {
-						setForm(empty_form);
+						setForm(watch ? {
+							ticker: watch.ticker,
+							purchasePrice: watch.purchasePrice,
+							gainPct: watch.gainPct,
+							lossPct: watch.lossPct
+						} : empty_form);
 						setError(null);
-					}}>Clear Form</button>
+					}}>{watch ? "Reset Form" : "Clear Form"}</button>
 				</div>
 			</form>
 			{error && <p>{error}</p>}

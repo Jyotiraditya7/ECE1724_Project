@@ -25,6 +25,7 @@ export default function WatchDetails() {
 	const navigate = useNavigate();
 
 	const [watch, setWatch] = useState(empty_watch);
+	const [submitting, setSubmitting] = useState(false);
 	const [loading, setLoading] = useState(true);
 	const [loadError, setLoadError] = useState(false);
 
@@ -51,6 +52,8 @@ export default function WatchDetails() {
 
 	async function handleSubmit(payload: WatchPayload) {
 		try {
+			if (submitting) throw new Error("Error updating watch: Submission Handler Busy");
+			setSubmitting(true);
 			const response = await fetch(`/api/watches/${params.watchid}`, {
 				method: "PATCH",
 				headers: { "Content-Type": "application/json" },
@@ -64,15 +67,19 @@ export default function WatchDetails() {
 		} catch {
       // TODO: Set message to "Error creating paper"
       // TODO: Return false
-			return;
-    }
+		} finally {
+			setSubmitting(false);
+		}
 	}
 
 	async function handleNotifReset() {
+		//If submitting is true, the notifs will be reset by the other submission process
+		if (submitting) return;
 		// Send a copy of the watch as a WatchPayload to trigger alert reset
 		const payload: WatchPayload = { ticker: watch.ticker, purchasePrice: watch.purchasePrice, gainPct: watch.gainPct, lossPct: watch.lossPct };
 
 		try {
+			setSubmitting(true);
 			const response = await fetch(`/api/watches/${params.watchid}`, {
 				method: "PATCH",
 				headers: { "Content-Type": "application/json" },
@@ -87,7 +94,8 @@ export default function WatchDetails() {
 		} catch {
       // TODO: Set message to "Error creating paper"
       // TODO: Return false
-			return;
+		} finally {
+			setSubmitting(false);
     }
 	}
 
@@ -116,7 +124,7 @@ export default function WatchDetails() {
 							<td>{!watch.currentPrice ? "N/A" : new Date(watch.priceUpdatedAt).toLocaleDateString()}</td>
 							<td>{watch.gainNotified ? "Triggered" : "Live"}</td>
 							<td>{watch.lossNotified ? "Triggered" : "Live"}</td>
-							<td><button onClick={()=>handleNotifReset()}>Reset</button></td>
+							<td><button disabled={submitting} onClick={()=>handleNotifReset()}>Reset</button></td>
 						</tr>
 					</table>
 					<WatchForm
