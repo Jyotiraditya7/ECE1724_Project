@@ -12,14 +12,20 @@ const empty_form: WatchFormData = {
 }
 
 type WatchFormProps = {
+	watch?: WatchFormData
 	onSubmit: (payload: WatchPayload) => void;
 }
 
-export default function LoginForm({onSubmit}: WatchFormProps) {
+export default function LoginForm({watch=null, onSubmit}: WatchFormProps) {
 
 	const [submitting, setSubmitting] = useState(false);// Prevent multiple form submissions
 	const [error, setError] = useState<string | null>(null);
-	const [form, setForm] = useState(empty_form);
+	const [form, setForm] = useState(watch ? {
+		ticker: watch.ticker,
+		purchasePrice: watch.purchasePrice,
+		gainPct: watch.gainPct,
+		lossPct: watch.lossPct
+	}:empty_form);
 
 	// Disable form while calling onSubmit
 	async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
@@ -28,7 +34,7 @@ export default function LoginForm({onSubmit}: WatchFormProps) {
 
 		// Validate Form Inputs
 		// ticker needs to be non-empty string
-		if (form.ticker.trim().length == 0) {
+		if (!watch && form.ticker.trim().length == 0) {
 			setError("Error: Please input a ticker");
 			return;
 		}
@@ -99,25 +105,25 @@ export default function LoginForm({onSubmit}: WatchFormProps) {
 
 	return (
 		<div>
-			<div>Create New Stock Watch</div>
+			<div>{watch ? "Edit Stock Watch" : "Create New Stock Watch"}</div>
 			<form
 	      noValidate
 	      onSubmit={handleSubmit}
     	>
-	      <div>
-					<div>
-				     <label htmlFor="Ticker">Ticker:</label>
-				     <input
-				       id="ticker"
-				       name="ticker"
-				       type="text"
-				       value={form.ticker}
-				       disabled={submitting}
-				       onChange={(event) => {
-								setForm({...form, ticker: event.target.value})
-				       }}
-				     />
-					</div>
+				{!watch && <div>
+					<label htmlFor="Ticker">Ticker:</label>
+					<input
+						id="ticker"
+						name="ticker"
+						type="text"
+						value={form.ticker}
+						disabled={submitting}
+						onChange={(event) => {
+							setForm({ ...form, ticker: event.target.value })
+						}}
+					/>
+				</div>}
+				<div>
 	        <label htmlFor="purchasePrice">Purchasing Price:</label>
 	        <input
 	          id="purchasePrice"
@@ -158,7 +164,7 @@ export default function LoginForm({onSubmit}: WatchFormProps) {
 			     />
 				</div>
 				<div>
-					<button type="submit" disabled={submitting}>Submit New StockWatch</button>
+					<button type="submit" disabled={submitting}>{ watch ? "Update Stock Watch" : "Submit new Stock Watch"}</button>
 					<button type="button" disabled={submitting} onClick={() => {
 						setForm(empty_form);
 						setError(null);
