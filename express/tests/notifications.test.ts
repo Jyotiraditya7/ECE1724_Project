@@ -162,21 +162,26 @@ describe("SSE Stream Edge Cases", () => {
     req.emitClose();
   });
 
-  it("does not send alerts for userB to userA while still matching demo-user listeners", () => {
+  it("delivers alerts only to the matching userId and not to other users or demo-user", () => {
     const reqA = createMockSseReq();
     const resA = createMockSseRes();
+    const reqB = createMockSseReq();
+    const resB = createMockSseRes();
     const reqDemo = createMockSseReq();
     const resDemo = createMockSseRes();
 
     handleAlertStream(reqA as never, resA as never, "user-a");
+    handleAlertStream(reqB as never, resB as never, "user-b");
     handleAlertStream(reqDemo as never, resDemo as never, "demo-user");
 
     broadcastAlertSse({ ...samplePayload, userId: "user-b", watchId: 20, ticker: "NVDA" });
 
+    expect(resB.chunks.some((c) => c.includes('"ticker":"NVDA"'))).toBe(true);
     expect(resA.chunks.some((c) => c.includes('"ticker":"NVDA"'))).toBe(false);
-    expect(resDemo.chunks.some((c) => c.includes('"ticker":"NVDA"'))).toBe(true);
+    expect(resDemo.chunks.some((c) => c.includes('"ticker":"NVDA"'))).toBe(false);
 
     reqA.emitClose();
+    reqB.emitClose();
     reqDemo.emitClose();
   });
 });
@@ -215,18 +220,25 @@ describe("Email Notification Edge Cases", () => {
     process.env["SMTP_PORT"] = "587";
     process.env["SMTP_USER"] = "sender@example.com";
     process.env["SMTP_PASS"] = "app-password";
-    process.env["ALERT_EMAIL_TO"] = "recipient@example.com";
+
+    const payloadWithEmail = {
+      ...samplePayload,
+      userEmail: "recipient@example.com",
+    };
 
     const sendMail = vi.fn().mockRejectedValue(new Error("535 5.7.8 Auth failed"));
     vi.mocked(nodemailer.createTransport).mockReturnValue({ sendMail } as never);
 
     const sseCalled = vi.fn();
     const settled = await Promise.allSettled([
-      Promise.resolve().then(() => sseCalled(samplePayload)),
-      sendThresholdAlertEmail(samplePayload),
+      Promise.resolve().then(() => sseCalled(payloadWithEmail)),
+      sendThresholdAlertEmail(payloadWithEmail),
     ]);
 
-    expect(sseCalled).toHaveBeenCalledWith(samplePayload);
+    expect(sseCalled).toHaveBeenCalledWith(payloadWithEmail);
+    expect(sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({ to: "recipient@example.com" }),
+    );
     expect(settled[0]?.status).toBe("fulfilled");
     expect(settled[1]?.status).toBe("rejected");
   });
@@ -261,5 +273,23 @@ describe("Email Notification Edge Cases", () => {
       | { tls?: { rejectUnauthorized?: boolean } }
       | undefined;
     expect(trueOpts?.tls).toEqual({ rejectUnauthorized: false });
+  });
+  
+  it("sends to event.userEmail instead of ALERT_EMAIL_TO when userEmail is missing", async () => {
+    process.env["SMTP_HOST"] = "smtp.gmail.com";
+    process.env["SMTP_PORT"] = "587";
+    process.env["SMTP_USER"] = "sender@example.com";
+    process.env["SMTP_PASS"] = "app-password";
+    process.env["ALERT_EMAIL_TO"] = "static-fallback@example.com";
+
+    const sendMail = vi.fn().mockResolvedValue({});
+    vi.mocked(nodemailer.createTransport).mockReturnValue({ sendMail } as never);
+
+    await sendThresholdAlertEmail({ ...samplePayload, userId: "alice", userEmail: "alice@example.com" });
+    expect(sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: "alice@example.com" }));
+
+    sendMail.mockClear();
+    await sendThresholdAlertEmail({ ...samplePayload, userId: "bob", userEmail: undefined });
+    expect(sendMail).not.toHaveBeenCalled();
   });
 });

@@ -14,6 +14,7 @@ export type AlertEvent = {
   type: "gain" | "loss";
   watchId: number;
   userId: string;
+  userEmail?: string | null;
   ticker: string;
   currentPrice: number;
   purchasePrice: number;
@@ -38,7 +39,15 @@ export async function runPricePoll(onAlert?: PollerOptions["onAlert"]) {
 
     const stocks = await prisma.stock.findMany({
       where: { watches: { some: {} } },
-      include: { watches: true },
+      include: {
+        watches: {
+          include: {
+            user: {
+              select: { email: true },
+            },
+          },
+        },
+      },
     });
 
     const now = new Date();
@@ -80,6 +89,7 @@ export async function runPricePoll(onAlert?: PollerOptions["onAlert"]) {
             type: "gain",
             watchId: watch.id,
             userId: watch.userId,
+            userEmail: watch.user?.email,
             ticker: stock.ticker,
             currentPrice,
             purchasePrice: watch.purchasePrice,
@@ -96,6 +106,7 @@ export async function runPricePoll(onAlert?: PollerOptions["onAlert"]) {
             type: "loss",
             watchId: watch.id,
             userId: watch.userId,
+            userEmail: watch.user?.email,
             ticker: stock.ticker,
             currentPrice,
             purchasePrice: watch.purchasePrice,

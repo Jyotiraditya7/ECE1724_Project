@@ -4,6 +4,7 @@ export interface ThresholdAlertPayload {
   type: "gain" | "loss";
   watchId: number;
   userId: string;
+  userEmail?: string | null;
   ticker: string;
   currentPrice: number;
   purchasePrice: number;
@@ -59,7 +60,7 @@ export function handleAlertStream(
 
 export function broadcastAlertSse(event: ThresholdAlertPayload): void {
   for (const client of clients) {
-    if (client.userId === event.userId || client.userId === "demo-user") {
+    if (client.userId === event.userId) {
       try {
         writeSseEvent(client.res, "alert", event);
       } catch {

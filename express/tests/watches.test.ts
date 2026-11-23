@@ -1,5 +1,5 @@
 import request from "supertest";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { prisma } from "../src/db";
 import { app, asUser, createUser, resetDb } from "./helpers";
 
@@ -12,6 +12,9 @@ beforeEach(async () => {
   await resetDb();
   await createUser(ALICE);
   await createUser(BOB);
+});
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 describe("authentication", () => {
@@ -59,6 +62,29 @@ describe("POST /api/watches", () => {
   it("accepts a loss threshold of exactly 0", async () => {
     const res = await asUser(ALICE).post("/api/watches").send({ ...validWatch, lossPct: 0 });
     expect(res.status).toBe(201);
+  });
+
+  it("creates a watch without calling Finnhub when FINNHUB_API_KEY is unset", async () => {
+    const previousKey = process.env["FINNHUB_API_KEY"];
+    delete process.env["FINNHUB_API_KEY"];
+
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockRejectedValue(new Error("Finnhub fetch should not be called without FINNHUB_API_KEY"));
+
+    try {
+      const res = await asUser(ALICE).post("/api/watches").send(validWatch);
+
+      expect(res.status).toBe(201);
+      expect(res.body.ticker).toBe("AAPL");
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      if (previousKey === undefined) {
+        delete process.env["FINNHUB_API_KEY"];
+      } else {
+        process.env["FINNHUB_API_KEY"] = previousKey;
+      }
+    }
   });
 
   it.each([

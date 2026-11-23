@@ -1,12 +1,13 @@
 import nodemailer from "nodemailer";
 import type { ThresholdAlertPayload } from "./sse";
 
-function resolveRecipientEmail(userId: string): string | undefined {
-  if (process.env["ALERT_EMAIL_TO"]) {
-    return process.env["ALERT_EMAIL_TO"];
+function resolveRecipientEmail(event: ThresholdAlertPayload): string | undefined {
+  const ownerEmail = event.userEmail?.trim();
+  if (ownerEmail) {
+    return ownerEmail;
   }
-  if (userId.includes("@")) {
-    return userId;
+  if (event.userId.includes("@")) {
+    return event.userId;
   }
   return undefined;
 }
@@ -35,10 +36,10 @@ export async function sendThresholdAlertEmail(
   event: ThresholdAlertPayload
 ): Promise<void> {
   const transporter = createTransport();
-  const to = resolveRecipientEmail(event.userId);
+  const to = resolveRecipientEmail(event);
 
   if (!transporter || !to) {
-    console.log("Email skipped (SMTP_HOST/SMTP_USER/SMTP_PASS or ALERT_EMAIL_TO not set):", {
+    console.log("Email skipped (SMTP_HOST/SMTP_USER/SMTP_PASS or recipient email not available):", {
       ticker: event.ticker,
       type: event.type,
       changePct: event.changePct,

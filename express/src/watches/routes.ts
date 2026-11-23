@@ -32,25 +32,23 @@ watchesRouter.get("/", async (req, res) => {
 
 watchesRouter.post("/", async (req, res) => {
   const { ticker, ...fields } = createWatchSchema.parse(req.body);
+  const normalizedTicker = ticker.trim().toUpperCase();
   const apiKey = process.env["FINNHUB_API_KEY"];
 
-  if (!apiKey) {
-    throw new HttpError(500, "Missing FINNHUB_API_KEY");
-  }
+  if (apiKey) {
+    const response = await fetch(
+      `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(normalizedTicker)}&token=${encodeURIComponent(apiKey)}`
+    );
 
-  const normalizedTicker = ticker.trim().toUpperCase();
-  const response = await fetch(
-    `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(normalizedTicker)}&token=${encodeURIComponent(apiKey)}`
-  );
+    if (!response.ok) {
+      throw new HttpError(502, "Failed to verify ticker with Finnhub");
+    }
 
-  if (!response.ok) {
-    throw new HttpError(502, "Failed to verify ticker with Finnhub");
-  }
+    const data = (await response.json()) as { c?: number; pc?: number };
 
-  const data = (await response.json()) as { c?: number; pc?: number };
-
-  if (!data || ((data.c ?? 0) === 0 && (data.pc ?? 0) === 0)) {
-    throw new HttpError(400, `Unknown ticker: ${normalizedTicker}`);
+    if (!data || ((data.c ?? 0) === 0 && (data.pc ?? 0) === 0)) {
+      throw new HttpError(400, `Unknown ticker: ${normalizedTicker}`);
+    }
   }
 
   const watch = await prisma.watch.create({
