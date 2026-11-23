@@ -31,14 +31,14 @@ watchesRouter.get("/", async (req, res) => {
 });
 
 watchesRouter.post("/", async (req, res) => {
+  // The schema already trims and upper-cases the ticker.
   const { ticker, ...fields } = createWatchSchema.parse(req.body);
-  const normalizedTicker = ticker.trim().toUpperCase();
   const apiKey = process.env["FINNHUB_API_KEY"];
 
   if (apiKey) {
     const finnhubDown = new HttpError(502, "Failed to verify ticker with Finnhub");
     const response = await fetch(
-      `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(normalizedTicker)}&token=${encodeURIComponent(apiKey)}`
+      `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(ticker)}&token=${encodeURIComponent(apiKey)}`
     ).catch(() => {
       throw finnhubDown;
     });
@@ -50,7 +50,7 @@ watchesRouter.post("/", async (req, res) => {
     const data = (await response.json()) as { c?: number; pc?: number };
 
     if (!data || ((data.c ?? 0) === 0 && (data.pc ?? 0) === 0)) {
-      throw new HttpError(400, `Unknown ticker: ${normalizedTicker}`);
+      throw new HttpError(400, `Unknown ticker: ${ticker}`);
     }
   }
 
@@ -60,8 +60,8 @@ watchesRouter.post("/", async (req, res) => {
       user: { connect: { id: req.userId } },
       stock: {
         connectOrCreate: {
-          where: { ticker: normalizedTicker },
-          create: { ticker: normalizedTicker },
+          where: { ticker },
+          create: { ticker },
         },
       },
     },
