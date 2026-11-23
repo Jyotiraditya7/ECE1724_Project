@@ -12,10 +12,10 @@ const TEMP_WATCH: Watch = {
 	lossPct:5,
 	gainNotified: false,
 	lossNotified: false,
-	createdAt: new Date(),
-	updatedAt: new Date(),
+	createdAt: "",
+	updatedAt: "",
 	currentPrice: 102,
-	priceUpdatedAt: new Date,
+	priceUpdatedAt: "",
 	changeAmount: 2,
 	changePct: 2
 }
@@ -67,14 +67,14 @@ export default function WatchDetails() {
 						<tr>
 							<th>Purchased Price</th>
 							<th>Current Price</th>
-							{/*<th>Last Updated</th>*/}
+							{<th>Last Updated</th>}
 							<th>Gain Alert Status</th>
 							<th>Loss Alert Status</th>
 						</tr>
 						<tr>
 							<td>{watch.purchasePrice}</td>
-							<td>{watch.currentPrice}</td>
-							{/*<td>{watch.priceUpdatedAt.toLocaleDateString()}</td> */}
+							<td>{!watch.currentPrice ? "N/A" : watch.currentPrice}</td>
+							{<td>{!watch.currentPrice ? "N/A" : new Date(watch.priceUpdatedAt).toLocaleDateString()}</td>}
 							<td>{watch.gainNotified ? "Triggered" : "Live"}</td>
 							<td>{watch.lossNotified ? "Triggered" : "Live"}</td>
 						</tr>

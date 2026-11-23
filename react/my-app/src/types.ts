@@ -13,10 +13,10 @@ export type Watch = {
 	lossPct: number;
 	gainNotified: boolean;
 	lossNotified: boolean;
-	createdAt: Date;
-	updatedAt: Date;
+	createdAt: string;	// Dates as ISO Strings
+	updatedAt: string;
 	currentPrice: number;
-	priceUpdatedAt: Date;
+	priceUpdatedAt: string;
 	changeAmount: number;
 	changePct: number;
 }
