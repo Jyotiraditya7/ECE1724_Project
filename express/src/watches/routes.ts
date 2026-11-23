@@ -34,7 +34,11 @@ async function syncUserPortfolioIfConfigured(userId: string) {
     return;
   }
   const watches = await listUserWatches(userId);
-  await savePortfolioToSpaces(userId, watches, undefined, config);
+  try {
+    await savePortfolioToSpaces(userId, watches, undefined, config);
+  } catch {
+    return;
+  }
 }
 
 /**
@@ -93,6 +97,10 @@ watchesRouter.post("/portfolio/import", async (req, res) => {
     throw err;
   }
 
+  if (parsedPortfolio.watches.length === 0) {
+    throw new HttpError(400, "Portfolio import must contain at least one watch");
+  }
+
   const created = await prisma.$transaction(async (tx) => {
     const results = [];
     for (const item of parsedPortfolio.watches) {
@@ -122,14 +130,35 @@ watchesRouter.post("/portfolio/import", async (req, res) => {
 
 watchesRouter.post("/", async (req, res) => {
   const { ticker, ...fields } = createWatchSchema.parse(req.body);
-  // TODO(Finnhub): reject tickers Finnhub doesn't know (proposal validation rule).
+  const normalizedTicker = ticker.trim().toUpperCase();
+  const apiKey = process.env["FINNHUB_API_KEY"];
+
+  if (apiKey) {
+    const response = await fetch(
+      `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(normalizedTicker)}&token=${encodeURIComponent(apiKey)}`
+    );
+
+    if (!response.ok) {
+      throw new HttpError(502, "Failed to verify ticker with Finnhub");
+    }
+
+    const data = (await response.json()) as { c?: number; pc?: number };
+
+    if (!data || ((data.c ?? 0) === 0 && (data.pc ?? 0) === 0)) {
+      throw new HttpError(400, `Unknown ticker: ${normalizedTicker}`);
+    }
+  }
 
   const watch = await prisma.watch.create({
     data: {
       ...fields,
       user: { connect: { id: req.userId } },
-      // Reuse the shared Stock row if another watch already tracks this ticker.
-      stock: { connectOrCreate: { where: { ticker }, create: { ticker } } },
+      stock: {
+        connectOrCreate: {
+          where: { ticker: normalizedTicker },
+          create: { ticker: normalizedTicker },
+        },
+      },
     },
     include: { stock: true },
   });
@@ -144,7 +173,7 @@ watchesRouter.get("/:id", async (req, res) => {
 /** The watch's stock prices since the watch was created, oldest first. */
 function findPriceHistory(watch: { stockId: number; createdAt: Date }) {
   return prisma.priceSnapshot.findMany({
-    where: { stockId: watch.stockId, timestamp: { gte: watch.createdAt } },
+    where: { stockId: watch.stockId, timestamp: { gt: watch.createdAt } },
     orderBy: { timestamp: "asc" },
     select: { price: true, timestamp: true },
   });
@@ -162,14 +191,22 @@ watchesRouter.get("/:id/prices.csv", async (req, res) => {
   let csv: string | null = null;
 
   if (config) {
-    csv = await downloadPriceHistoryCsv(req.userId, watch.id, undefined, config);
+    try {
+      csv = await downloadPriceHistoryCsv(req.userId, watch.id, undefined, config);
+    } catch {
+      csv = null;
+    }
   }
 
   if (csv === null) {
     const prices = await findPriceHistory(watch);
     csv = serializePriceHistoryCsv(prices);
-    if (config) {
-      await uploadFullPriceHistoryCsv(req.userId, watch.id, prices, undefined, config);
+    if (config && prices.length > 0) {
+      try {
+        await uploadFullPriceHistoryCsv(req.userId, watch.id, prices, undefined, config);
+      } catch {
+        return;
+      }
     }
   }
 

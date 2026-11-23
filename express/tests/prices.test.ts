@@ -1,5 +1,7 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "../src/db";
+import { deletePriceHistoryCsv } from "../src/storage/priceHistory";
+import { getSpacesConfig } from "../src/storage/spaces";
 import { asUser, createUser, resetDb } from "./helpers";
 
 const HOUR = 60 * 60 * 1000;
@@ -24,6 +26,19 @@ beforeEach(async () => {
   await resetDb();
   await createUser("alice");
   await createUser("bob");
+});
+afterEach(async () => {
+  const config = getSpacesConfig();
+  if (config) {
+    for (const userId of ["alice", "bob"]) {
+      for (const watchId of [1, 2, 3]) {
+        try {
+          await deletePriceHistoryCsv(userId, watchId, undefined, config);
+        } catch {
+        }
+      }
+    }
+  }
 });
 
 describe("GET /api/watches/:id/prices", () => {
