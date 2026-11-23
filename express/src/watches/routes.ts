@@ -36,12 +36,15 @@ watchesRouter.post("/", async (req, res) => {
   const apiKey = process.env["FINNHUB_API_KEY"];
 
   if (apiKey) {
+    const finnhubDown = new HttpError(502, "Failed to verify ticker with Finnhub");
     const response = await fetch(
       `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(normalizedTicker)}&token=${encodeURIComponent(apiKey)}`
-    );
+    ).catch(() => {
+      throw finnhubDown;
+    });
 
     if (!response.ok) {
-      throw new HttpError(502, "Failed to verify ticker with Finnhub");
+      throw finnhubDown;
     }
 
     const data = (await response.json()) as { c?: number; pc?: number };
