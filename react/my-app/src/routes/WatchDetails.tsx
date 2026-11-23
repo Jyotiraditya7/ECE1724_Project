@@ -66,15 +66,38 @@ export default function WatchDetails() {
       // TODO: Return false
 			return;
     }
-  }
+	}
+
+	async function handleNotifReset() {
+		// Send a copy of the watch as a WatchPayload to trigger alert reset
+		const payload: WatchPayload = { ticker: watch.ticker, purchasePrice: watch.purchasePrice, gainPct: watch.gainPct, lossPct: watch.lossPct };
+
+		try {
+			const response = await fetch(`/api/watches/${params.watchid}`, {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(payload),
+			})
+			if (!response.ok) {
+				throw new Error("Error updating watch");
+			}
+			const data = await response.json();
+			setWatch(data);
+
+		} catch {
+      // TODO: Set message to "Error creating paper"
+      // TODO: Return false
+			return;
+    }
+	}
 
 	return (
 		<div>
 			<h1>Money Watch</h1>
 			{loading ? (
-				<div><p>Loading StockWatch...</p></div>
+				<div>Loading StockWatch...</div>
 			) : loadError ? (
-				<div><p>Error Loading StockWatch</p></div>
+				<div>Error Loading StockWatch</div>
 			) : (
 				<div>
 					<h2>{`${watch.ticker} Stock Watch Summary`}</h2>
@@ -85,13 +108,15 @@ export default function WatchDetails() {
 							{<th>Last Updated</th>}
 							<th>Gain Alert Status</th>
 							<th>Loss Alert Status</th>
+							<th>Reset Alerts</th>
 						</tr>
 						<tr>
 							<td>{watch.purchasePrice}</td>
 							<td>{!watch.currentPrice ? "N/A" : watch.currentPrice}</td>
-							{<td>{!watch.currentPrice ? "N/A" : new Date(watch.priceUpdatedAt).toLocaleDateString()}</td>}
+							<td>{!watch.currentPrice ? "N/A" : new Date(watch.priceUpdatedAt).toLocaleDateString()}</td>
 							<td>{watch.gainNotified ? "Triggered" : "Live"}</td>
 							<td>{watch.lossNotified ? "Triggered" : "Live"}</td>
+							<td><button onClick={()=>handleNotifReset()}>Reset</button></td>
 						</tr>
 					</table>
 					<WatchForm
