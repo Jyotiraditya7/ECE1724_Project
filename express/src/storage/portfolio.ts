@@ -1,5 +1,6 @@
 import type { S3Client } from "@aws-sdk/client-s3";
 import { z } from "zod";
+import { createWatchSchema } from "../watches/schemas";
 import {
   downloadTextObject,
   getPortfolioObjectKey,
@@ -8,12 +9,7 @@ import {
 } from "./spaces";
 
 
-export const sharedWatchItemSchema = z.object({
-  ticker: z.string().trim().min(1).max(20).transform((v) => v.toUpperCase()),
-  purchasePrice: z.number().positive(),
-  gainPct: z.number().positive(),
-  lossPct: z.number().max(0),
-});
+export const sharedWatchItemSchema = createWatchSchema;
 
 export const portfolioExportSchema = z.object({
   version: z.literal(1).default(1),
@@ -39,7 +35,7 @@ export function buildPortfolioExportPayload(watches: WatchRecordForExport[]): Po
     version: 1,
     exportedAt: new Date().toISOString(),
     watches: watches.map((watch) => ({
-      ticker: watch.stock.ticker.toUpperCase(),
+      ticker: watch.stock.ticker.trim().toUpperCase(),
       purchasePrice: watch.purchasePrice,
       gainPct: watch.gainPct,
       lossPct: watch.lossPct,
@@ -61,11 +57,17 @@ export async function savePortfolioToSpaces(
   watches: WatchRecordForExport[],
   client?: S3Client,
   config?: SpacesConfig | null,
-): Promise<string> {
+): Promise<string | null> {
   const key = getPortfolioObjectKey(userId);
   const body = serializePortfolioJson(watches);
-  await uploadTextObject(key, body, "application/json; charset=utf-8", client, config);
-  return key;
+  try{
+    await uploadTextObject(key, body, "application/json; charset=utf-8", client, config);
+    return key;
+  } catch (error) {
+    console.error("Failed to save portfolio to Spaces:", error);
+    return null;
+  }
+  
 }
 
 export async function loadPortfolioFromSpaces(

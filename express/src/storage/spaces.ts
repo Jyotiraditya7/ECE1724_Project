@@ -54,9 +54,6 @@ export function getPortfolioObjectKey(userId: string): string {
   return `users/${sanitizeSegment(userId)}/portfolio.json`;
 }
 
-export function getPriceHistoryCsvKey(userId: string, watchId: number | string): string {
-  return `users/${sanitizeSegment(userId)}/watches/${sanitizeSegment(String(watchId))}/price-history.csv`;
-}
 
 async function streamToString(body: unknown): Promise<string> {
   if (!body) {

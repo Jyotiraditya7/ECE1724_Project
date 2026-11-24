@@ -1,5 +1,5 @@
 import { Router, type Request } from "express";
-import { ZodError } from "zod";
+
 import { prisma } from "../db";
 import { HttpError } from "../errors";
 import {
@@ -7,12 +7,7 @@ import {
   savePortfolioToSpaces,
   serializePortfolioJson,
 } from "../storage/portfolio";
-import {
-  deletePriceHistoryCsv,
-  downloadPriceHistoryCsv,
-  serializePriceHistoryCsv,
-  uploadFullPriceHistoryCsv,
-} from "../storage/priceHistory";
+import { serializePriceHistoryCsv } from "../storage/priceHistory";
 import { getSpacesConfig } from "../storage/spaces";
 import { createWatchSchema, updateWatchSchema, watchIdSchema } from "./schemas";
 import { toWatchResponse } from "./serialize";
@@ -28,16 +23,19 @@ async function listUserWatches(userId: string) {
   });
 }
 
-async function syncUserPortfolioIfConfigured(userId: string) {
+async function persistPortfolioToSpacesIfConfigured(
+  userId: string,
+  watches: Awaited<ReturnType<typeof listUserWatches>>,
+) {
   const config = getSpacesConfig();
   if (!config) {
     return;
   }
-  const watches = await listUserWatches(userId);
+
   try {
     await savePortfolioToSpaces(userId, watches, undefined, config);
-  } catch {
-    return;
+  } catch (error) {
+    console.error("Failed to save portfolio to Spaces:", error);
   }
 }
 
@@ -56,17 +54,14 @@ async function findOwnWatch(req: Request) {
 }
 
 watchesRouter.get("/", async (req, res) => {
-  const watches = await listUserWatches(req.userId); //prisma call moved to async function listUserWatches line 23
+  const watches = await listUserWatches(req.userId);
   res.json(watches.map(toWatchResponse));
 });
 
 watchesRouter.get("/portfolio.json", async (req, res) => {
   const watches = await listUserWatches(req.userId);
   const json = serializePortfolioJson(watches);
-  const config = getSpacesConfig();
-  if (config) {
-    await savePortfolioToSpaces(req.userId, watches, undefined, config);
-  }
+  await persistPortfolioToSpacesIfConfigured(req.userId, watches);
   res.type("application/json");
   res.attachment("portfolio.json");
   res.send(json);
@@ -87,15 +82,7 @@ watchesRouter.post("/portfolio/import", async (req, res) => {
     }
   }
 
-  let parsedPortfolio;
-  try {
-    parsedPortfolio = portfolioExportSchema.parse(rawPayload);
-  } catch (err) {
-    if (err instanceof ZodError) {
-      throw new HttpError(400, err.issues.map((i) => i.message).join("; "));
-    }
-    throw err;
-  }
+  const parsedPortfolio = portfolioExportSchema.parse(rawPayload);
 
   if (parsedPortfolio.watches.length === 0) {
     throw new HttpError(400, "Portfolio import must contain at least one watch");
@@ -124,7 +111,8 @@ watchesRouter.post("/portfolio/import", async (req, res) => {
     return results;
   });
 
-  await syncUserPortfolioIfConfigured(req.userId);
+  const updatedWatches = await listUserWatches(req.userId);
+  await persistPortfolioToSpacesIfConfigured(req.userId, updatedWatches);
   res.status(201).json(created.map(toWatchResponse));
 });
 
@@ -162,7 +150,7 @@ watchesRouter.post("/", async (req, res) => {
     },
     include: { stock: true },
   });
-  await syncUserPortfolioIfConfigured(req.userId);
+  
   res.status(201).json(toWatchResponse(watch));
 });
 
@@ -173,7 +161,7 @@ watchesRouter.get("/:id", async (req, res) => {
 /** The watch's stock prices since the watch was created, oldest first. */
 function findPriceHistory(watch: { stockId: number; createdAt: Date }) {
   return prisma.priceSnapshot.findMany({
-    where: { stockId: watch.stockId, timestamp: { gt: watch.createdAt } },
+    where: { stockId: watch.stockId, timestamp: { gte: watch.createdAt } },
     orderBy: { timestamp: "asc" },
     select: { price: true, timestamp: true },
   });
@@ -187,28 +175,10 @@ watchesRouter.get("/:id/prices", async (req, res) => {
 /** The same price history as a CSV file download, built from the database on request. */
 watchesRouter.get("/:id/prices.csv", async (req, res) => {
   const watch = await findOwnWatch(req);
-  const config = getSpacesConfig();
-  let csv: string | null = null;
+  
+  const prices = await findPriceHistory(watch);
+  const csv = serializePriceHistoryCsv(prices);
 
-  if (config) {
-    try {
-      csv = await downloadPriceHistoryCsv(req.userId, watch.id, undefined, config);
-    } catch {
-      csv = null;
-    }
-  }
-
-  if (csv === null) {
-    const prices = await findPriceHistory(watch);
-    csv = serializePriceHistoryCsv(prices);
-    if (config && prices.length > 0) {
-      try {
-        await uploadFullPriceHistoryCsv(req.userId, watch.id, prices, undefined, config);
-      } catch {
-        return;
-      }
-    }
-  }
 
   res.type("text/csv");
   res.attachment(`${watch.stock.ticker}-prices.csv`);
@@ -225,17 +195,13 @@ watchesRouter.patch("/:id", async (req, res) => {
     data: { ...changes, gainNotified: false, lossNotified: false },
     include: { stock: true },
   });
-  await syncUserPortfolioIfConfigured(req.userId);
+
   res.json(toWatchResponse(watch));
 });
 
 watchesRouter.delete("/:id", async (req, res) => {
   const watch = await findOwnWatch(req);
   await prisma.watch.delete({ where: { id: watch.id } });
-  const config = getSpacesConfig();
-  if (config) {
-    await deletePriceHistoryCsv(req.userId, watch.id, undefined, config);
-    await syncUserPortfolioIfConfigured(req.userId);
-  }
+  
   res.status(204).end();
 });

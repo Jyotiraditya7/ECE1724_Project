@@ -7,8 +7,7 @@
 
 
 import { prisma } from "./db";
-import { appendPriceSnapshotsToSpaces } from "./storage/priceHistory";
-import { getSpacesConfig } from "./storage/spaces";
+
 
 let isPolling = false;
 
@@ -52,7 +51,6 @@ export async function runPricePoll(onAlert?: PollerOptions["onAlert"]) {
       },
     });
 
-    const spacesConfig = getSpacesConfig();
 
     const now = new Date();
 
@@ -78,24 +76,7 @@ export async function runPricePoll(onAlert?: PollerOptions["onAlert"]) {
         }),
       ]);
 
-      if (spacesConfig) {
-        const results = await Promise.allSettled(
-          stock.watches.map((watch) =>
-            appendPriceSnapshotsToSpaces(
-              watch.userId,
-              watch.id,
-              [{ timestamp: now, price: currentPrice }],
-              undefined,
-              spacesConfig,
-            ),
-          ),
-        );
-        for (const result of results) {
-          if (result.status === "rejected") {
-            console.error("Failed to append price snapshot to Spaces:", result.reason);
-          }
-        }
-      }
+      
 
       for (const watch of stock.watches) {
         if (watch.purchasePrice <= 0) continue;

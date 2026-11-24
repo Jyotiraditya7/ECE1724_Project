@@ -1,18 +1,14 @@
+import { S3Client } from "@aws-sdk/client-s3";
 import express from "express";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
+import { errorHandler } from "../src/errors";
 import { watchesRouter } from "../src/watches/routes";
 import { prisma } from "../src/db";
 import { runPricePoll, type AlertEvent } from "../src/pricePoller";
 import { resetDb } from "./helpers";
 
-const SPACES_ENV_KEYS = [
-  "DO_SPACES_ENDPOINT",
-  "DO_SPACES_REGION",
-  "DO_SPACES_BUCKET",
-  "DO_SPACES_ACCESS_KEY",
-  "DO_SPACES_SECRET_KEY",
-] as const;
+
 
 function createTestApp() {
   const testApp = express();
@@ -25,6 +21,7 @@ function createTestApp() {
     next();
   });
   testApp.use("/api/watches", watchesRouter);
+  testApp.use(errorHandler);
   return testApp;
 }
 
@@ -37,27 +34,27 @@ function asUser(testApp: express.Express, userId: string) {
   };
 }
 
+function enableMockSpacesConfig() {
+  vi.stubEnv("DO_SPACES_ENDPOINT", "https://tor1.digitaloceanspaces.com");
+  vi.stubEnv("DO_SPACES_REGION", "tor1");
+  vi.stubEnv("DO_SPACES_BUCKET", "test-bucket");
+  vi.stubEnv("DO_SPACES_ACCESS_KEY", "test-key");
+  vi.stubEnv("DO_SPACES_SECRET_KEY", "test-secret");
+}
+
 describe("Portfolio export, import, prices.csv, and alert recipient behavior", () => {
   const testApp = createTestApp();
-  const previousSpacesEnv: Record<string, string | undefined> = {};
+  
 
   beforeEach(async () => {
     await resetDb();
-    for (const key of SPACES_ENV_KEYS) {
-      previousSpacesEnv[key] = process.env[key];
-      delete process.env[key];
-    }
+    
   });
 
   afterEach(() => {
-    for (const key of SPACES_ENV_KEYS) {
-      if (previousSpacesEnv[key] === undefined) {
-        delete process.env[key];
-      } else {
-        process.env[key] = previousSpacesEnv[key];
-      }
-    }
+    
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
   });
 
   it("exports user portfolio JSON from GET /api/watches/portfolio.json", async () => {
@@ -78,6 +75,7 @@ describe("Portfolio export, import, prices.csv, and alert recipient behavior", (
       .expect(200);
 
     expect(res.headers["content-type"]).toContain("application/json");
+    expect(res.body.json).toBeUndefined();
     expect(res.body.version).toBe(1);
     expect(typeof res.body.exportedAt).toBe("string");
     expect(Array.isArray(res.body.watches)).toBe(true);
@@ -93,7 +91,81 @@ describe("Portfolio export, import, prices.csv, and alert recipient behavior", (
     );
   });
 
-  it("imports valid watches via POST /api/watches/portfolio/import and rejects invalid payloads", async () => {
+  it("saves portfolio to Spaces on export and import, but not on watch create or delete", async () => {
+    enableMockSpacesConfig();
+    const sendSpy = vi.spyOn(S3Client.prototype, "send").mockResolvedValue({} as never);
+    const userId = "spaces-timing-user";
+
+    await prisma.user.upsert({
+      where: { id: userId },
+      update: { email: "timing@example.com", name: "Timing User" },
+      create: { id: userId, email: "timing@example.com", name: "Timing User" },
+    });
+
+    const created = await asUser(testApp, userId)
+      .post("/api/watches")
+      .send({ ticker: "AAPL", purchasePrice: 150, gainPct: 10, lossPct: -5 })
+      .expect(201);
+
+    expect(sendSpy).not.toHaveBeenCalled();
+
+    await asUser(testApp, userId)
+      .delete(`/api/watches/${created.body.id}`)
+      .expect(204);
+
+    expect(sendSpy).not.toHaveBeenCalled();
+
+    await asUser(testApp, userId)
+      .get("/api/watches/portfolio.json")
+      .expect(200);
+
+    expect(sendSpy).toHaveBeenCalledTimes(1);
+
+    await asUser(testApp, userId)
+      .post("/api/watches/portfolio/import")
+      .send({
+        version: 1,
+        watches: [{ ticker: "MSFT", purchasePrice: 400, gainPct: 12, lossPct: -6 }],
+      })
+      .expect(201);
+
+    expect(sendSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not return 500 when Spaces fails during export, import, or delete", async () => {
+    enableMockSpacesConfig();
+    vi.spyOn(S3Client.prototype, "send").mockRejectedValue(new Error("Spaces unavailable"));
+    const userId = "spaces-outage-user";
+
+    await prisma.user.upsert({
+      where: { id: userId },
+      update: { email: "outage@example.com", name: "Outage User" },
+      create: { id: userId, email: "outage@example.com", name: "Outage User" },
+    });
+
+    const created = await asUser(testApp, userId)
+      .post("/api/watches")
+      .send({ ticker: "AAPL", purchasePrice: 150, gainPct: 10, lossPct: -5 })
+      .expect(201);
+
+    await asUser(testApp, userId)
+      .get("/api/watches/portfolio.json")
+      .expect(200);
+
+    await asUser(testApp, userId)
+      .post("/api/watches/portfolio/import")
+      .send({
+        version: 1,
+        watches: [{ ticker: "MSFT", purchasePrice: 400, gainPct: 12, lossPct: -6 }],
+      })
+      .expect(201);
+
+    await asUser(testApp, userId)
+      .delete(`/api/watches/${created.body.id}`)
+      .expect(204);
+  });
+
+    it("imports valid watches via POST /api/watches/portfolio/import and rejects invalid payloads with structured Zod details", async () => {
     const userId = "portfolio-import-user";
     await prisma.user.upsert({
       where: { id: userId },
@@ -108,13 +180,27 @@ describe("Portfolio export, import, prices.csv, and alert recipient behavior", (
 
     expect(invalidRes.body).toBeDefined();
 
+    const badItemRes = await asUser(testApp, userId)
+      .post("/api/watches/portfolio/import")
+      .send({
+        version: 1,
+        watches: [
+          { ticker: "TOOLONGTICKER123", purchasePrice: -10, gainPct: 8, lossPct: 5 },
+        ],
+      })
+      .expect(400);
+
+    expect(badItemRes.body.error).toBe("Validation failed");
+    expect(Array.isArray(badItemRes.body.details)).toBe(true);
+    expect(badItemRes.body.details.length).toBeGreaterThan(0);
+
     const validRes = await asUser(testApp, userId)
       .post("/api/watches/portfolio/import")
       .send({
         version: 1,
         watches: [
-          { ticker: "MSFT", purchasePrice: 410, gainPct: 8, lossPct: -4 },
-          { ticker: "NVDA", purchasePrice: 120, gainPct: 15, lossPct: 0 },
+          { ticker: "brk.b", purchasePrice: 410, gainPct: 8, lossPct: -4 },
+          { ticker: "NVDA-1", purchasePrice: 120, gainPct: 15, lossPct: 0 },
         ],
       })
       .expect(201);
@@ -122,8 +208,8 @@ describe("Portfolio export, import, prices.csv, and alert recipient behavior", (
     expect(Array.isArray(validRes.body)).toBe(true);
     expect(validRes.body).toHaveLength(2);
     expect(validRes.body.map((w: { ticker: string }) => w.ticker)).toEqual([
-      "MSFT",
-      "NVDA",
+      "BRK.B",
+      "NVDA-1",
     ]);
   });
 
@@ -197,5 +283,42 @@ describe("Portfolio export, import, prices.csv, and alert recipient behavior", (
     const matchingAlert = alerts.find((a) => a.watchId === watchId);
     expect(matchingAlert).toBeDefined();
     expect(matchingAlert?.userEmail).toBe(ownerEmail);
+  });
+
+  it("starts with blank DO_SPACES_* env vars by default from vitest.config.ts", () => { // Verifies test isolation blanks out DO_SPACES_* env vars so tests do not hit Spaces by default.
+    expect(process.env["DO_SPACES_ENDPOINT"]).toBe("");
+    expect(process.env["DO_SPACES_REGION"]).toBe("");
+    expect(process.env["DO_SPACES_BUCKET"]).toBe("");
+    expect(process.env["DO_SPACES_ACCESS_KEY"]).toBe("");
+    expect(process.env["DO_SPACES_SECRET_KEY"]).toBe("");
+  });
+
+  it("does not call Spaces during runPricePoll even when DO_SPACES_* env vars are set", async () => { // Verifies price polling stays Postgres-only and never writes or reads Spaces when Spaces env vars are configured.
+    enableMockSpacesConfig();
+    const sendSpy = vi.spyOn(S3Client.prototype, "send").mockResolvedValue({} as never);
+    const userId = "poller-spaces-user";
+
+    await prisma.user.upsert({
+      where: { id: userId },
+      update: { email: "poller@example.com", name: "Poller User" },
+      create: { id: userId, email: "poller@example.com", name: "Poller User" },
+    });
+
+    await asUser(testApp, userId)
+      .post("/api/watches")
+      .send({ ticker: "AAPL", purchasePrice: 100, gainPct: 10, lossPct: -5 })
+      .expect(201);
+
+    vi.stubEnv("FINNHUB_API_KEY", "test-finnhub-key");
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ c: 105 }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    await runPricePoll(async () => {});
+
+    expect(sendSpy).not.toHaveBeenCalled();
   });
 });

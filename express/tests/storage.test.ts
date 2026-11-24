@@ -8,18 +8,17 @@ import {
   serializePortfolioJson,
 } from "../src/storage/portfolio";
 import {
-  appendPriceSnapshotsToSpaces,
-  downloadPriceHistoryCsv,
+
   formatPriceSnapshotRow,
   serializePriceHistoryCsv,
-  uploadFullPriceHistoryCsv,
+
 } from "../src/storage/priceHistory";
 import {
   createSpacesClient,
   deleteObject,
   downloadTextObject,
   getPortfolioObjectKey,
-  getPriceHistoryCsvKey,
+
   getSpacesConfig,
   uploadTextObject,
   type SpacesConfig,
@@ -63,7 +62,7 @@ describe("DigitalOcean Spaces helpers", () => {
 
   it("builds sanitized object keys under users/{userId}", () => {
     expect(getPortfolioObjectKey("user_1")).toBe("users/user_1/portfolio.json");
-    expect(getPriceHistoryCsvKey("user_1", 42)).toBe("users/user_1/watches/42/price-history.csv");
+    
   });
 
   it("creates an S3Client and uploads, downloads, and deletes text objects", async () => {
@@ -168,14 +167,7 @@ describe("Portfolio JSON export and import", () => {
   });
 });
 
-describe("Price history CSV formatting and Spaces sync", () => {
-  const sampleConfig: SpacesConfig = {
-    endpoint: "https://tor1.digitaloceanspaces.com",
-    region: "tor1",
-    bucket: "test-bucket",
-    accessKeyId: "test-key",
-    secretAccessKey: "test-secret",
-  };
+describe("Price history CSV formatting", () => {
 
   it("formats rows and serializes full CSVs", () => {
     const ts = new Date("2026-01-15T12:00:00.000Z");
@@ -187,35 +179,5 @@ describe("Price history CSV formatting and Spaces sync", () => {
     expect(csv).toBe("timestamp,price\n2026-01-15T12:00:00.000Z,185.5\n");
   });
 
-  it("creates header when appending to a new watch CSV and appends when existing", async () => {
-    const send = vi.fn();
-    const mockClient = { send } as unknown as S3Client;
-    const ts1 = new Date("2026-01-15T12:00:00.000Z");
-    const ts2 = new Date("2026-01-15T12:01:00.000Z");
 
-    send.mockRejectedValueOnce({ name: "NoSuchKey", $metadata: { httpStatusCode: 404 } });
-    await appendPriceSnapshotsToSpaces("u1", 7, [{ timestamp: ts1, price: 100 }], mockClient, sampleConfig);
-    const firstPut = send.mock.calls[1]?.[0] as PutObjectCommand;
-    expect(firstPut.input.Body).toBe("timestamp,price\n2026-01-15T12:00:00.000Z,100\n");
-
-    send.mockResolvedValueOnce({
-      Body: {
-        transformToString: vi.fn().mockResolvedValue("timestamp,price\n2026-01-15T12:00:00.000Z,100\n"),
-      },
-    });
-    await appendPriceSnapshotsToSpaces("u1", 7, [{ timestamp: ts2, price: 102.5 }], mockClient, sampleConfig);
-    const secondPut = send.mock.calls[3]?.[0] as PutObjectCommand;
-    expect(secondPut.input.Body).toBe(
-      "timestamp,price\n2026-01-15T12:00:00.000Z,100\n2026-01-15T12:01:00.000Z,102.5\n",
-    );
-
-    await uploadFullPriceHistoryCsv("u1", 7, [{ timestamp: ts1, price: 100 }], mockClient, sampleConfig);
-    send.mockResolvedValueOnce({
-      Body: {
-        transformToString: vi.fn().mockResolvedValue("timestamp,price\n2026-01-15T12:00:00.000Z,100\n"),
-      },
-    });
-    const downloaded = await downloadPriceHistoryCsv("u1", 7, mockClient, sampleConfig);
-    expect(downloaded).toBe("timestamp,price\n2026-01-15T12:00:00.000Z,100\n");
-  });
 });
