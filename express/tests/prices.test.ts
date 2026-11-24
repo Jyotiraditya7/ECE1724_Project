@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "../src/db";
+
 import { asUser, createUser, resetDb } from "./helpers";
 
 const HOUR = 60 * 60 * 1000;
@@ -26,6 +27,7 @@ beforeEach(async () => {
   await createUser("bob");
 });
 
+
 describe("GET /api/watches/:id/prices", () => {
   it("returns the stock's prices since the watch was created, oldest first", async () => {
     const id = await createWatch("alice", "AAPL");
@@ -41,6 +43,19 @@ describe("GET /api/watches/:id/prices", () => {
       { price: 101, timestamp: "2026-11-10T17:00:00.000Z" },
     ]);
   });
+
+  it("includes a snapshot taken at the exact watch createdAt timestamp", async () => {
+    const id = await createWatch("alice", "AAPL");
+    await addSnapshot("AAPL", 100, 0);
+
+    const res = await asUser("alice").get(`/api/watches/${id}/prices`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([
+      { price: 100, timestamp: createdAt.toISOString() },
+    ]);
+  });
+
 
   it("only includes prices for the watch's own stock", async () => {
     const id = await createWatch("alice", "AAPL");
@@ -74,6 +89,24 @@ describe("GET /api/watches/:id/prices.csv", () => {
       "timestamp,price\n" +
         "2026-11-10T16:00:00.000Z,100\n" +
         "2026-11-10T17:00:00.000Z,101.25\n",
+    );
+  });
+
+  it("includes snapshots at createdAt and reflects new Postgres snapshots without stale cache", async () => {
+    const id = await createWatch("alice", "AAPL");
+    await addSnapshot("AAPL", 100, 0);
+
+    const firstRes = await asUser("alice").get(`/api/watches/${id}/prices.csv`);
+    expect(firstRes.status).toBe(200);
+    expect(firstRes.text).toBe(
+      `timestamp,price\n${createdAt.toISOString()},100\n`,
+    );
+
+    await addSnapshot("AAPL", 105, 1);
+    const secondRes = await asUser("alice").get(`/api/watches/${id}/prices.csv`);
+    expect(secondRes.status).toBe(200);
+    expect(secondRes.text).toBe(
+      `timestamp,price\n${createdAt.toISOString()},100\n2026-11-10T16:00:00.000Z,105\n`,
     );
   });
 

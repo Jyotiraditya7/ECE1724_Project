@@ -8,6 +8,7 @@
 
 import { prisma } from "./db";
 
+
 let isPolling = false;
 
 export type AlertEvent = {
@@ -50,6 +51,7 @@ export async function runPricePoll(onAlert?: PollerOptions["onAlert"]) {
       },
     });
 
+
     const now = new Date();
 
     for (const stock of stocks) {
@@ -73,6 +75,8 @@ export async function runPricePoll(onAlert?: PollerOptions["onAlert"]) {
           data: { stockId: stock.id, price: currentPrice, timestamp: now },
         }),
       ]);
+
+      
 
       for (const watch of stock.watches) {
         if (watch.purchasePrice <= 0) continue;
