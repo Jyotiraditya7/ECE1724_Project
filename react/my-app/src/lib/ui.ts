@@ -1,16 +1,22 @@
 // Shared Tailwind class strings to keep styling consistent across components.
 
-export const headerClass = "w-full md:mb-20 sm:mb-10 mb-5 md:p-7 p-4 border-3 rounded-2xl bg-blue-300 border-cyan-900";
+export const pageContainerClass = "flex-col justify-items-center p-5";
 
-export const h1Class = "md:text-5xl sm:text-3xl text-2xl font-bold font-[Brush_Script_MT] text-gray-800";
+export const headerClass = "w-full lg:mb-10 mb-5 lg:p-7 p-4 border-3 rounded-2xl bg-blue-300 border-cyan-900";
 
-export const formHeaderClass = "md:text-xl text-lg font-medium text-gray-800";
+export const h1Class = "lg:text-5xl text-3xl font-bold font-[Brush_Script_MT] text-gray-800";
 
-export const clickableText = "text-gray-800 hover:text-gray-500";
+export const formHeaderClass = "lg:text-2xl text-lg font-medium text-gray-800";
 
-export const separatorColor = "bg-gray-400";
+export const clickableText = "mt-1 text-gray-800 hover:text-gray-500";
 
-export const inputClass =
-  "border rounded-md p-2 w-full h-8 bg-gray-200 focus:outline-none focus:ring-2 focus:ring-ring";
+export const errorMsgClass = "lg:text-3xl text-xl text-red-700";
 
-export const submitClass = "border-2 rounded-full text-gray-200 bg-cyan-900 border-cyan-400";
+export const msgClass = "lg:text-3xl text-xl text-gray-500";
+
+export const inputClass = "border rounded-md p-2 w-full h-8 bg-gray-200 focus:outline-none focus:ring-2 focus:ring-ring";
+
+export const buttonClass = "border-2 rounded-full text-gray-200 hover:font-bold bg-cyan-900 border-cyan-600 hover:border-cyan-400";
+
+export const submitClass = "border-2 rounded-full text-gray-200 hover:text-green-300 hover:font-bold bg-cyan-900 border-cyan-600 hover:border-green-600";
+export const cancelClass = "border-2 rounded-full text-gray-200 hover:text-red-400 hover:font-bold bg-cyan-900 border-cyan-600 hover:border-red-700";

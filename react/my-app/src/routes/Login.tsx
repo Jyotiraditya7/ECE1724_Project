@@ -6,7 +6,7 @@ import type { User, LoginFormData } from "../types";
 import { useNavigate } from "react-router";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { headerClass, h1Class, formHeaderClass, clickableText, separatorColor } from "../lib/ui";
+import { headerClass, h1Class, formHeaderClass, clickableText, pageContainerClass } from "../lib/ui";
 
 const TEMP_dummy_creds: User = {
 	id: "demo-user",
@@ -93,13 +93,13 @@ export default function Login() {
 	}
 
 	return (
-		<div className='flex-col justify-items-center p-5'>
+		<div className={pageContainerClass}>
 			<header className={headerClass}>
 				<h1 className={h1Class}>Stock Watch</h1>
 			</header>
-			<div className='md:w-1/3 w-1/2 px-5 pt-2 pb-3 border-3 rounded-lg bg-blue-200  border-cyan-900 '>
+			<div className='lg:w-1/3 w-1/2 lg:mt-20 sm:mt-15 mt-0 px-5 pt-2 pb-3 border-3 rounded-lg bg-blue-200  border-cyan-900 '>
 				<p className={formHeaderClass}>{createNew ? "Sign up for Stock Watch" : "Login to your account"}</p>
-				<Separator className={separatorColor} />
+				<Separator className="bg-gray-400" />
 				<LoginForm createNew={createNew} onSubmit={handleLogin} />
 				<button type='button' className={clickableText} onClick={() => {
 					setCreateNew(!createNew);

@@ -3,6 +3,9 @@ import WatchForm from "../components/WatchForm";
 import { useNavigate, useParams } from "react-router";
 import { useEffect, useState } from "react";
 import type { Watch, WatchPayload} from "../types";
+import { ButtonGroup } from "@/components/ui/button-group";
+import { Button } from "@/components/ui/button";
+import { headerClass, h1Class, pageContainerClass, errorMsgClass, msgClass, buttonClass } from "../lib/ui";
 
 export default function Dashboard() {
 	const params = useParams();
@@ -86,30 +89,34 @@ export default function Dashboard() {
 	}
 
 	return (
-		<div>
-			<h1>Money Watch</h1>
-			<h2>{`Welcome Back ${params.id}`}</h2>
-			{loading ? (
-        <div><p>Loading StockWatches...</p></div>
-      ) : loadError ? (
-        <div><p>Error Loading StockWatches</p></div>
-				) : watches.length == 0 ? (
-					<div><p>No StockWatches Found</p></div>
-      ) : (watches.map((watch) => (
-				<WatchCard
-					id={watch.id}
-					ticker={watch.ticker}
-					triggered={watch.gainNotified || watch.lossNotified}
-					onView={()=>navigate(`/users/${params.id}/watches/${watch.id}`)}
-					onDelete={handleDelete}
-				/>
-			)))}
-			<WatchForm onSubmit={handleCreate}></WatchForm>
-			<section>
-				<button type='button' onClick={handleExport}>Download Portfolio</button>
-				<button type='button' onClick={handleImport}>Upload Portfolio</button>
-			</section>
-			<button type='button' onClick={handleLogout}>Logout</button>
+		<div className={pageContainerClass}>
+			<header className={headerClass}>
+				<h1 className={h1Class}>Stock Watch</h1>
+			</header>
+			<div className='flex-col justify-items-center lg:w-2/3 w-full px-5 py-3 space-y-6 border-3 rounded-lg bg-blue-200  border-cyan-900 '>
+				<h2 className="lg:text-3xl text-2xl font-medium text-gray-800">{`Welcome Back ${params.id}`}</h2>
+				{loading ? (
+					<div className={msgClass}>Loading StockWatches...</div>
+	      ) : loadError ? (
+	        <div className={errorMsgClass}>Error Loading StockWatches</div>
+					) : watches.length == 0 ? (
+						<div className={msgClass}>No StockWatches Found</div>
+	      ) : (watches.map((watch) => (
+					<WatchCard
+						id={watch.id}
+						ticker={watch.ticker}
+						triggered={watch.gainNotified || watch.lossNotified}
+						onView={()=>navigate(`/users/${params.id}/watches/${watch.id}`)}
+						onDelete={handleDelete}
+					/>
+				)))}
+				{!loadError &&	<ButtonGroup>
+						<Button type='button' onClick={handleExport} className={buttonClass}>Download Portfolio</Button>
+						<Button type='button' onClick={handleImport} className={buttonClass}>Upload Portfolio</Button>
+				</ButtonGroup>}
+				{!loadError &&	<WatchForm onSubmit={handleCreate}></WatchForm>}
+				<Button type='button' onClick={handleLogout} className={buttonClass}>Logout</Button>
+			</div>
 		</div>
 	)
 }

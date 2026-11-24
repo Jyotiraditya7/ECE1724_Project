@@ -3,6 +3,10 @@
 import type { SubmitEvent } from "react";
 import type { WatchFormData, WatchPayload } from "../types";
 import { useState } from "react";
+import { cancelClass, formHeaderClass, inputClass, separatorColor, submitClass } from "@/lib/ui";
+import { Separator } from "./ui/separator";
+import { ButtonGroup } from "./ui/button-group";
+import { Button } from "./ui/button";
 
 const empty_form: WatchFormData = {
 	ticker: "",
@@ -104,18 +108,21 @@ export default function LoginForm({watch, onSubmit}: WatchFormProps) {
 	}
 
 	return (
-		<div>
-			<div>{watch ? "Edit Stock Watch" : "Create New Stock Watch"}</div>
+		<div className="xl:w-1/3 w-1/2 p-3 border-4 rounded-3xl border-cyan-700 bg-blue-300">
+			<div className={formHeaderClass}>{watch ? "Update Stock Watch" : "Create New Stock Watch"}</div>
+			<Separator className="bg-cyan-900" />
 			<form
 	      noValidate
 	      onSubmit={handleSubmit}
+				className="flex-col justify-items-center mt-3 space-y-4"
     	>
-				{!watch && <div>
+				{!watch && <div className="w-full">
 					<label htmlFor="Ticker">Ticker:</label>
 					<input
 						id="ticker"
 						name="ticker"
 						type="text"
+						className={ inputClass }
 						value={form.ticker}
 						disabled={submitting}
 						onChange={(event) => {
@@ -123,12 +130,13 @@ export default function LoginForm({watch, onSubmit}: WatchFormProps) {
 						}}
 					/>
 				</div>}
-				<div>
+				<div className="w-full">
 	        <label htmlFor="purchasePrice">Purchasing Price:</label>
 	        <input
 	          id="purchasePrice"
 	          name="purchasePrice"
 	          type="number"
+						className={ inputClass }
 	          value={form.purchasePrice}
 	          disabled={submitting}
 	          onChange={(event) => {
@@ -136,13 +144,13 @@ export default function LoginForm({watch, onSubmit}: WatchFormProps) {
 	          }}
 	        />
 	      </div>
-
-	      <div>
+	      <div className="w-full">
 	        <label htmlFor="gainPct">Gain Alert %:</label>
 	        <input
 	          id="gainPct"
 	          name="gainPct"
 	          type="number"
+						className={ inputClass }
 	          value={form.gainPct}
 	          disabled={submitting}
 	          onChange={(event) => {
@@ -150,22 +158,23 @@ export default function LoginForm({watch, onSubmit}: WatchFormProps) {
 	          }}
 	        />
 				</div>
-				<div>
+				<div className="w-full">
 			     <label htmlFor="lossPct">Loss Alert %:</label>
 			     <input
-			       id="lossPct"
-			       name="lossPct"
-			       type="number"
-			       value={form.lossPct}
-			       disabled={submitting}
-			       onChange={(event) => {
+		       	id="lossPct"
+			      name="lossPct"
+				    type="number"
+						className={ inputClass }
+			      value={form.lossPct}
+			      disabled={submitting}
+			      onChange={(event) => {
 							setForm({...form, lossPct: event.target.value})
-			       }}
-			     />
+			      }}
+			    />
 				</div>
-				<div>
-					<button type="submit" disabled={submitting}>{ watch ? "Update Stock Watch" : "Submit new Stock Watch"}</button>
-					<button type="button" disabled={submitting} onClick={() => {
+				<ButtonGroup className="justify-center align-middle">
+					<Button type="submit" disabled={submitting} className={submitClass}>Submit</Button>
+					<Button type="button" disabled={submitting} className={cancelClass}  onClick={() => {
 						setForm(watch ? {
 							ticker: watch.ticker,
 							purchasePrice: watch.purchasePrice,
@@ -173,10 +182,10 @@ export default function LoginForm({watch, onSubmit}: WatchFormProps) {
 							lossPct: watch.lossPct
 						} : empty_form);
 						setError(null);
-					}}>{watch ? "Reset Form" : "Clear Form"}</button>
-				</div>
+						}}>{watch ? "Reset" : "Clear"}</Button>
+				</ButtonGroup>
 			</form>
-			{error && <p>{error}</p>}
+			{error && <div className="mt-3 text-red-600">{error}</div>}
 		</div>
 	);
 }
