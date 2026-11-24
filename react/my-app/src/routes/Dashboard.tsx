@@ -132,6 +132,7 @@ export default function Dashboard() {
 			<Banner/>
 			<div className='flex-col justify-items-center lg:w-2/3 w-full px-5 py-3 space-y-6 border-3 rounded-lg bg-blue-200  border-cyan-900 '>
 				<h2 className={h2Class}>{`Welcome Back ${params.id}`}</h2>
+				{/*Dismissable Status and Error messages*/}
 				{!loadError && statusMsg && <Button
 					type='button'
 					onClick={() => setStatusMsg(null)}
@@ -139,6 +140,7 @@ export default function Dashboard() {
 				>
 					{statusMsg}
 				</Button>}
+				{/*Non-Dismissable Status/Error messages + WatchCard list*/}
 				{loading ? (
 					<div className={msgClass}>Loading StockWatches...</div>
 	      ) : loadError ? (
@@ -156,11 +158,14 @@ export default function Dashboard() {
 						onDelete={handleDelete}
 					/>
 				)))}
+				{/*Upload/Download buttons*/}
 				{!loadError &&	<ButtonGroup>
 					<Button type='button' onClick={handleExport} disabled={locked} className={buttonClass}>Download Portfolio</Button>
 						<Button type='button' onClick={handleImport} disabled={locked} className={buttonClass}>Upload Portfolio</Button>
 				</ButtonGroup>}
-				{!loadError &&	<WatchForm onSubmit={handleCreate} locked={locked}></WatchForm>}
+				{/*Create Watch Form*/}
+				{!loadError && <WatchForm onSubmit={handleCreate} locked={locked}></WatchForm>}
+				{/*Logout Button */}
 				<Button type='button' onClick={handleLogout} className={buttonClass}>Logout</Button>
 			</div>
 		</div>

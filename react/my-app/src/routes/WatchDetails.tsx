@@ -85,6 +85,7 @@ export default function WatchDetails() {
 		}
 	}, [params.watchid, watch, locked]);
 
+	//Update Watch submission handler
 	async function handleSubmit(payload: WatchPayload) {
 		if (locked) return;
 		try {
@@ -111,6 +112,7 @@ export default function WatchDetails() {
 		}
 	}
 
+	// Reset Notif handler
 	async function handleNotifReset() {
 		//If submitting is true, the notifs will be reset by the other submission process
 		if (locked) return;
@@ -144,17 +146,20 @@ export default function WatchDetails() {
 		<div className={pageContainerClass}>
 			<Banner/>
 			<div className="w-full p-3 border-4 rounded-3xl bg-gray-400 border-cyan-950">
+				{/*Non-Dismissable status/error messages*/}
 				{loading ? (
 					<div className={msgClass}>Loading StockWatch...</div>
 				) : loadError ? (
 					<div className={errorMsgClass}>Error Loading StockWatch</div>
 				) : (
 					<div className="flex-col justify-items-center space-y-10 mb-2">
+						{/*Pack ticker and subheader in a div as seperate elements so ticker can be styled seperately*/}
 						<div className="flex space-x-2">
 							<p className={`${tickerClass} lg:text-3xl text-2xl`}>{watch.ticker}</p>
 							<p className={h2Class}>Stock Watch Summary</p>
 						</div>
 						<div>
+							{/*Dismissable status/error messages*/}
 							{statusMsg && <Button
 								type='button'
 								onClick={() => setStatusMsg(null)}
@@ -180,6 +185,7 @@ export default function WatchDetails() {
 											<td className={tableEntryClass}><AlertLabel alert={watch.gainNotified} resetting={submitting} /></td>
 											<td className={tableEntryClass}><AlertLabel alert={watch.lossNotified} resetting={submitting} /></td>
 									<td className={tableEntryClass}>
+										{/*Reset Alerts switch*/}
 										<Switch
 											disabled={submitting || (!watch.gainNotified && !watch.lossNotified)}
 											checked={!watch.gainNotified && !watch.lossNotified}

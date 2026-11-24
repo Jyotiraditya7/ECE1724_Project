@@ -86,11 +86,13 @@ export default function Login() {
 				<p className={formHeaderClass}>{createNew ? "Sign up for Stock Watch" : "Login to your account"}</p>
 				<Separator className="bg-gray-400" />
 				<LoginForm createNew={createNew} onSubmit={handleLogin} />
+				{/*Toggle sign in or create account modes */}
 				<button type='button' className={clickableText} onClick={() => {
 					setCreateNew(!createNew);
 					setMessage(null);
 				}}>{createNew ? "Return to Sign In" : "Create a New Account"}</button>
 			</div>
+			{/*Error and Status messages*/}
 			{message && <Button
 					type='button'
 					disabled={!message.includes("Error")}
