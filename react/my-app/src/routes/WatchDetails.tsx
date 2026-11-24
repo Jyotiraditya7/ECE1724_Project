@@ -149,7 +149,6 @@ export default function WatchDetails() {
 								</td>
 							</tr>
 						</table>
-						{msg && <div className={msgClass}>{msg}</div>}
 						<WatchForm
 							watch={{
 								ticker: watch.ticker,
@@ -158,6 +157,7 @@ export default function WatchDetails() {
 								lossPct: watch.lossPct.toString()
 							}}
 						onSubmit={handleSubmit} />
+						{msg && <div className="text-gray-800">{msg}</div>}
 					</div>
 				)}
 				<Button type='button' onClick={() => navigate(`/users/${params.userid}`)} className={buttonClass}>Back</Button>
