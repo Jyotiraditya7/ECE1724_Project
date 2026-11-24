@@ -3,6 +3,7 @@
 import type { SubmitEvent } from "react";
 import type { LoginFormData } from "../types";
 import { useEffect, useState } from "react";
+import { Button } from "./ui/button";
 
 const empty_form: LoginFormData = {
 	username: "",
@@ -47,26 +48,29 @@ export default function LoginForm({createNew, onSubmit }: LoginFormProps) {
 			<form
 	      noValidate
 	      onSubmit={handleSubmit}
+				className="mt-3 space-y-4"
     	>
-	      <div>
-					{createNew && <div>
-				     <label htmlFor="Username">Username:</label>
-				     <input
-				       id="username"
-				       name="username"
-				       type="text"
-				       value={form.username}
-				       disabled={submitting}
-				       onChange={(event) => {
-								setForm({...form, username: event.target.value})
-				       }}
-				     />
-					</div>}
+     		{createNew && <div>
+			  	<label htmlFor="Username">Username:</label>
+			    <input
+			    	id="username"
+			      name="username"
+						type="text"
+						className="border rounded-md p-2 w-full h-8 bg-gray-200 focus:outline-none focus:ring-2 focus:ring-ring"
+			      value={form.username}
+			      disabled={submitting}
+			      onChange={(event) => {
+							setForm({...form, username: event.target.value})
+			      }}
+			     />
+				</div>}
+       	<div>
 	        <label htmlFor="email">Email:</label>
 	        <input
 	          id="email"
 	          name="email"
 	          type="text"
+						className="border rounded-md p-2 w-full h-8 bg-gray-200 focus:outline-none focus:ring-2 focus:ring-ring"
 	          value={form.email}
 	          disabled={submitting}
 	          onChange={(event) => {
@@ -74,13 +78,13 @@ export default function LoginForm({createNew, onSubmit }: LoginFormProps) {
 	          }}
 	        />
 	      </div>
-
 	      <div>
 	        <label htmlFor="password">Password:</label>
 	        <input
 	          id="password"
 	          name="password"
 	          type="text"
+						className="border rounded-md p-2 w-full h-8 bg-gray-200 focus:outline-none focus:ring-2 focus:ring-ring"
 	          value={form.password}
 	          disabled={submitting}
 	          onChange={(event) => {
@@ -89,23 +93,22 @@ export default function LoginForm({createNew, onSubmit }: LoginFormProps) {
 	        />
 				</div>
 				{createNew && <div>
-			     <label htmlFor="confirm">Confirm Password:</label>
-			     <input
-			       id="confirm"
-			       name="confirm"
-			       type="text"
-			       value={form.confirmPass}
-			       disabled={submitting}
-			       onChange={(event) => {
+			    <label htmlFor="confirm">Confirm Password:</label>
+			    <input
+			    	id="confirm"
+			      name="confirm"
+			      type="text"
+						className="border rounded-md p-2 w-full h-8 bg-gray-200 focus:outline-none focus:ring-2 focus:ring-ring"
+			      value={form.confirmPass}
+			      disabled={submitting}
+			      onChange={(event) => {
 							setForm({...form, confirmPass: event.target.value})
-			       }}
-			     />
+			      }}
+			    />
 				</div>}
-				<div>
-	        <button type="submit" disabled={submitting}>
-	          {createNew ? "Create New Account" : "Sign In"}
-	        </button>
-				</div>
+        <Button type="submit" disabled={submitting} className="border-2 rounded-full text-gray-200 bg-cyan-900 border-cyan-400">
+          {createNew ? "Create New Account" : "Sign In"}
+        </Button>
 	    </form>
 		</div>
 	);

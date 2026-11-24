@@ -100,7 +100,7 @@ export default function Login() {
 				<p className='text-lg font-medium text-gray-800'>{createNew ? "Sign up for Stock Watch" : "Login to your account"}</p>
 				<Separator className='bg-gray-400'/>
 				<LoginForm createNew={createNew} onSubmit={handleLogin} />
-				<button type='button' onClick={() => {
+				<button type='button' className="text-gray-800 hover:text-gray-500" onClick={() => {
 					setCreateNew(!createNew);
 					setMessage(null);
 				}}>{createNew ? "Return to Sign In" : "Create a New Account"}</button>
