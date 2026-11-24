@@ -16,7 +16,10 @@ export default function Dashboard() {
 	const [loading, setLoading] = useState(true);
 	const [loadError, setLoadError] = useState(false);
 	const [statusMsg, setStatusMsg] = useState<string | null>(null);
+	const [locked, setLocked] = useState(false);	// Protect against race conditions
 
+
+	// Load watches on page refresh
 	useEffect(() => {
 		async function loadWatches() {
 			try {
@@ -34,15 +37,45 @@ export default function Dashboard() {
 			}
 		}
 		loadWatches();
-	}, []);
+	}, [])
 
+	// Live update watches every 10 seconds
+	useEffect(() => {
+		async function loadWatches() {
+			if (locked) return;
+			try {
+				// Lock form submission while reading
+				setLocked(true);
+				const response = await fetch("/api/watches");
+
+				if (!response.ok) {
+					throw new Error("Error loading watches")
+				}
+				const data = await response.json();
+				setWatches(data);
+			} catch {
+				setStatusMsg("Error updating watches");
+			} finally {
+				setLocked(false);
+			}
+		}
+
+		const intervalId = setInterval(() => {
+			loadWatches();
+		}, 10000);
+		return () => {
+			clearInterval(intervalId);
+		}
+	}, [watches, locked]);
 
 	async function handleLogout() {
 		navigate('/');
 	}
 
 	async function handleCreate(payload: WatchPayload) {
+		if (locked) return;
 		try {
+			setLocked(true);
 			const response = await fetch("/api/watches", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -53,17 +86,20 @@ export default function Dashboard() {
 				throw new Error("Error creating watch");
 			}
 			const data = await response.json();
-			setWatches((prev) => [...prev, data]);
 			navigate(`/users/${params.id}/watches/${data.id}`);
 		} catch {
 			setStatusMsg("Error creating watch");
-    }
+		} finally {
+			setLocked(false);
+		}
 	}
 
 	async function handleDelete(id: number, ticker: string) {
+		if (locked) return;
 		const ok = confirm(`Are you sure you want to delete this watch for ${ticker} stock?`);
 		if (!ok) return;
 		try {
+			setLocked(true);
 			const response = await fetch(`/api/watches/${id}`, {
 				method: "DELETE"
 			});
@@ -76,14 +112,18 @@ export default function Dashboard() {
 			setStatusMsg(`Deleted watch for ${ticker} stock`);
 		} catch {
 			setStatusMsg("Error deleting watch");
+		} finally {
+			setLocked(false);
 		}
 	}
 
 	async function handleExport() {
+		if (locked) return;
 		return;
 	}
 
 	async function handleImport() {
+		if (locked) return;
 		return;
 	}
 
@@ -111,15 +151,16 @@ export default function Dashboard() {
 						ticker={watch.ticker}
 						triggered={watch.gainNotified || watch.lossNotified}
 						changePct={watch.changePct}
+						locked={locked}
 						onView={()=>navigate(`/users/${params.id}/watches/${watch.id}`)}
 						onDelete={handleDelete}
 					/>
 				)))}
 				{!loadError &&	<ButtonGroup>
-						<Button type='button' onClick={handleExport} className={buttonClass}>Download Portfolio</Button>
-						<Button type='button' onClick={handleImport} className={buttonClass}>Upload Portfolio</Button>
+					<Button type='button' onClick={handleExport} disabled={locked} className={buttonClass}>Download Portfolio</Button>
+						<Button type='button' onClick={handleImport} disabled={locked} className={buttonClass}>Upload Portfolio</Button>
 				</ButtonGroup>}
-				{!loadError &&	<WatchForm onSubmit={handleCreate}></WatchForm>}
+				{!loadError &&	<WatchForm onSubmit={handleCreate} locked={locked}></WatchForm>}
 				<Button type='button' onClick={handleLogout} className={buttonClass}>Logout</Button>
 			</div>
 		</div>

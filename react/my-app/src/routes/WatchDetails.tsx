@@ -31,11 +31,13 @@ export default function WatchDetails() {
 	const navigate = useNavigate();
 
 	const [watch, setWatch] = useState(empty_watch);
-	const [submitting, setSubmitting] = useState(false);
 	const [loading, setLoading] = useState(true);
 	const [loadError, setLoadError] = useState(false);
 	const [statusMsg, setStatusMsg] = useState<string | null>(null);
+	const [submitting, setSubmitting] = useState(false);	// used when updating alert display
+	const [locked, setLocked] = useState(false);					// used for race conditions
 
+	// Load watch on page refresh
 	useEffect(() => {
 		async function loadWatch() {
 			try {
@@ -55,10 +57,39 @@ export default function WatchDetails() {
 		loadWatch();
 	}, [params.watchid]);
 
+	// Live update watch every 10 seconds
+	useEffect(() => {
+		async function loadWatch() {
+			if (locked) return;
+			try {
+				setLocked(true);
+				const response = await fetch(`/api/watches/${params.watchid}`);
+
+				if (!response.ok) {
+					throw new Error("Error loading watches");
+				}
+				const data = await response.json();
+				setWatch(data);
+			} catch {
+				setStatusMsg("Error updating watch");
+			} finally {
+				setLocked(false);
+			}
+		}
+
+		const intervalId = setInterval(() => {
+			loadWatch();
+		}, 10000);
+		return () => {
+			clearInterval(intervalId);
+		}
+	}, [params.watchid, watch, locked]);
+
 	async function handleSubmit(payload: WatchPayload) {
+		if (locked) return;
 		try {
-			if (submitting) throw new Error("Error updating watch: Submission Handler Busy");
 			setSubmitting(true);
+			setLocked(true);
 			const response = await fetch(`/api/watches/${params.watchid}`, {
 				method: "PATCH",
 				headers: { "Content-Type": "application/json" },
@@ -68,22 +99,27 @@ export default function WatchDetails() {
 			if (!response.ok) {
 				throw new Error("Error updating watch");
 			}
-			navigate(`/users/${params.userid}`);
+
+			const data = await response.json()
+			setWatch(data);
+			setStatusMsg("Updated Watch")
 		} catch {
 			setStatusMsg("Error updating watch")
 		} finally {
 			setSubmitting(false);
+			setLocked(false);
 		}
 	}
 
 	async function handleNotifReset() {
 		//If submitting is true, the notifs will be reset by the other submission process
-		if (submitting) return;
+		if (locked) return;
 		// Send a copy of the watch as a WatchPayload to trigger alert reset
 		const payload: WatchPayload = { ticker: watch.ticker, purchasePrice: watch.purchasePrice, gainPct: watch.gainPct, lossPct: watch.lossPct };
 
 		try {
 			setSubmitting(true);
+			setLocked(true);
 			const response = await fetch(`/api/watches/${params.watchid}`, {
 				method: "PATCH",
 				headers: { "Content-Type": "application/json" },
@@ -100,6 +136,7 @@ export default function WatchDetails() {
 			setStatusMsg("Error resetting alerts");
 		} finally {
 			setSubmitting(false);
+			setLocked(false);
     }
 	}
 
@@ -160,6 +197,7 @@ export default function WatchDetails() {
 								gainPct: watch.gainPct.toString(),
 								lossPct: watch.lossPct.toString()
 							}}
+							locked={locked}
 						onSubmit={handleSubmit} />
 					</div>
 				)}

@@ -17,10 +17,11 @@ const empty_form: WatchFormData = {
 
 type WatchFormProps = {
 	watch?: WatchFormData;
+	locked: boolean;
 	onSubmit: (payload: WatchPayload) => void;
 }
 
-export default function LoginForm({watch, onSubmit}: WatchFormProps) {
+export default function LoginForm({watch, locked, onSubmit}: WatchFormProps) {
 
 	const [submitting, setSubmitting] = useState(false);// Prevent multiple form submissions
 	const [error, setError] = useState<string | null>(null);
@@ -34,7 +35,7 @@ export default function LoginForm({watch, onSubmit}: WatchFormProps) {
 	// Disable form while calling onSubmit
 	async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
 		event.preventDefault();
-		if (submitting) return;
+		if (submitting || locked) return;
 
 		// Validate Form Inputs
 		// ticker needs to be non-empty string
@@ -179,8 +180,8 @@ export default function LoginForm({watch, onSubmit}: WatchFormProps) {
 			    />
 				</div>
 				<ButtonGroup className="justify-center align-middle">
-					<Button type="submit" disabled={submitting} className={submitClass}>Submit</Button>
-					<Button type="button" disabled={submitting} className={cancelClass}  onClick={() => {
+					<Button type="submit" disabled={submitting||locked} className={submitClass}>Submit</Button>
+					<Button type="button" disabled={submitting||locked} className={cancelClass}  onClick={() => {
 						setForm(watch ? {
 							ticker: watch.ticker,
 							purchasePrice: watch.purchasePrice,
