@@ -95,10 +95,10 @@ export default function LoginForm({watch, locked, onSubmit}: WatchFormProps) {
 			ticker: form.ticker,
 			purchasePrice: Number(form.purchasePrice),
 			gainPct: Number(form.gainPct),
-			lossPct: Number(form.lossPct)
+			lossPct: -Number(form.lossPct)
 		}
 
-
+		//Race Condition Protection
 		setSubmitting(true);
 		try {
 			onSubmit(payload);
@@ -118,6 +118,7 @@ export default function LoginForm({watch, locked, onSubmit}: WatchFormProps) {
 		<div className="xl:w-1/3 w-1/2 p-3 border-4 rounded-3xl border-cyan-700 bg-blue-300">
 			<div className={formHeaderClass}>{watch ? "Update Stock Watch" : "Create New Stock Watch"}</div>
 			<Separator className="bg-cyan-900" />
+			{/*Only show Ticker input field when creating new watch*/}
 			<form
 	      noValidate
 	      onSubmit={handleSubmit}
@@ -192,6 +193,7 @@ export default function LoginForm({watch, locked, onSubmit}: WatchFormProps) {
 						}}>{watch ? "Reset" : "Clear"}</Button>
 				</ButtonGroup>
 			</form>
+			{/*Error and Status Messages*/}
 			{error && <div className="mt-3 text-red-600">{error}</div>}
 			{submitting && <div className="mt-3 text-gray-500">{watch?"Updating StockWatch...":"Creating StockWatch..."}</div>}
 		</div>
