@@ -23,7 +23,7 @@ export default function WatchCard({ id, ticker, triggered, changePct, locked, on
 				</div>
 				<button type='button' disabled={locked} onClick={()=>onView(id)} className={clickableText}>View Details</button>
 			</div>
-			<ChangePctLabel pct={changePct}/>
+			{changePct?<ChangePctLabel pct={changePct}/>:<div className="w-min h-min px-3 self-center border-2 rounded-full font-bold text-xl text-gray-400 bg-cyan-800 border-cyan-900">N/A</div>}
 			<Button type='button' disabled={locked} onClick={()=>{onDelete(id, ticker)}} className="w-7 h-7 border-2 text-white bg-red-700 hover:text-red-400 hover:bg-cyan-950 hover:border-red-600">X</Button>
 		</div>
 	);
