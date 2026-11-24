@@ -1,3 +1,4 @@
+import type { AddressInfo } from "node:net";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import request from "supertest";
 import nodemailer from "nodemailer";
@@ -183,6 +184,35 @@ describe("SSE Stream Edge Cases", () => {
     reqA.emitClose();
     reqB.emitClose();
     reqDemo.emitClose();
+  });
+});
+
+describe("GET /api/alerts/stream", () => {
+  it("rejects a signed-out request with the usual 401 body", async () => {
+    const res = await request(app).get("/api/alerts/stream");
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: "Not signed in" });
+  });
+
+  it("opens an event stream for the signed-in user", async () => {
+    // The stream never ends, so read its first event over a real socket and hang up.
+    const server = app.listen(0);
+    try {
+      const { port } = server.address() as AddressInfo;
+      const res = await fetch(`http://127.0.0.1:${port}/api/alerts/stream`, {
+        headers: { "x-test-user": "alice" },
+      });
+      const reader = res.body!.getReader();
+      const first = new TextDecoder().decode((await reader.read()).value);
+      await reader.cancel();
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get("content-type")).toBe("text/event-stream");
+      expect(first).toMatch(/^event: connected\ndata: \{"userId":"alice",/);
+    } finally {
+      server.closeAllConnections();
+      server.close();
+    }
   });
 });
 
