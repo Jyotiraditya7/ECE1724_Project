@@ -106,6 +106,7 @@ export default function Dashboard() {
 						id={watch.id}
 						ticker={watch.ticker}
 						triggered={watch.gainNotified || watch.lossNotified}
+						changePct={watch.changePct}
 						onView={()=>navigate(`/users/${params.id}/watches/${watch.id}`)}
 						onDelete={handleDelete}
 					/>

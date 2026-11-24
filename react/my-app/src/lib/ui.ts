@@ -8,7 +8,7 @@ export const h1Class = "lg:text-5xl text-3xl font-bold font-[Brush_Script_MT] te
 
 export const formHeaderClass = "lg:text-2xl text-lg font-medium text-gray-800";
 
-export const clickableText = "mt-1 text-gray-800 hover:text-gray-500";
+export const clickableText = "text-sm mt-1 text-gray-800 hover:text-gray-500";
 
 export const errorMsgClass = "lg:text-3xl text-xl text-red-700";
 

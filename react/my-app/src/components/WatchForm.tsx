@@ -3,7 +3,7 @@
 import type { SubmitEvent } from "react";
 import type { WatchFormData, WatchPayload } from "../types";
 import { useState } from "react";
-import { cancelClass, formHeaderClass, inputClass, separatorColor, submitClass } from "@/lib/ui";
+import { cancelClass, formHeaderClass, inputClass, submitClass } from "@/lib/ui";
 import { Separator } from "./ui/separator";
 import { ButtonGroup } from "./ui/button-group";
 import { Button } from "./ui/button";
