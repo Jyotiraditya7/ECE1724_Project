@@ -1,6 +1,6 @@
 import { FiAlertCircle } from "react-icons/fi"
 import {Button} from "./ui/button"
-import { clickableText, tickerClass } from "../lib/ui";
+import { alertIconClass, clickableText, tickerClass } from "../lib/ui";
 import ChangePctLabel from "./ChangePctLabel";
 
 type WatchCardProps = {
@@ -27,7 +27,7 @@ export default function WatchCard({ id, ticker, triggered, changePct, onView, on
 			<div className="flex-col">
 				<div className="flex justify-center">
 					<p className={tickerClass}>{ticker}</p>
-					{triggered && <FiAlertCircle className="border rounded-full text-xl border-cyan-900 bg-orange-600 text-gray-100"/>}
+					{triggered && <FiAlertCircle className={alertIconClass}/>}
 				</div>
 				<button type='button' onClick={handleView} className={clickableText}>View Details</button>
 			</div>

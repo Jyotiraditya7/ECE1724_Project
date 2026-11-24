@@ -2,6 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import type { Watch, WatchPayload} from "../types";
 import WatchForm from "../components/WatchForm";
+import { pageContainerClass, msgClass, errorMsgClass, h2Class, tickerClass, tableClass, tableHeaderClass, tableEntryClass, submitClass, buttonClass, alertIconClass } from "../lib/ui";
+import ChangePctLabel from "../components/ChangePctLabel";
+import Banner from "../components/Banner";
+import { Button } from "../components/ui/button";
+import AlertLabel from "../components/AlertLabel";
+import { Switch } from "../components/ui/switch";
 
 // This will all be fetched from backend using Watch id number passed in as route param
 const empty_watch: Watch = {
@@ -26,6 +32,7 @@ export default function WatchDetails() {
 
 	const [watch, setWatch] = useState(empty_watch);
 	const [submitting, setSubmitting] = useState(false);
+	const [msg, setMsg] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [loadError, setLoadError] = useState(false);
 
@@ -80,6 +87,7 @@ export default function WatchDetails() {
 
 		try {
 			setSubmitting(true);
+			setMsg("Resetting Alerts...");
 			const response = await fetch(`/api/watches/${params.watchid}`, {
 				method: "PATCH",
 				headers: { "Content-Type": "application/json" },
@@ -96,48 +104,64 @@ export default function WatchDetails() {
       // TODO: Return false
 		} finally {
 			setSubmitting(false);
+			setMsg(null);
     }
 	}
 
 	return (
-		<div>
-			<h1>Money Watch</h1>
-			{loading ? (
-				<div>Loading StockWatch...</div>
-			) : loadError ? (
-				<div>Error Loading StockWatch</div>
-			) : (
-				<div>
-					<h2>{`${watch.ticker} Stock Watch Summary`}</h2>
-					<table>
-						<tr>
-							<th>Purchased Price</th>
-							<th>Current Price</th>
-							{<th>Last Updated</th>}
-							<th>Gain Alert Status</th>
-							<th>Loss Alert Status</th>
-							<th>Reset Alerts</th>
-						</tr>
-						<tr>
-							<td>{watch.purchasePrice}</td>
-							<td>{!watch.currentPrice ? "N/A" : watch.currentPrice}</td>
-							<td>{!watch.currentPrice ? "N/A" : new Date(watch.priceUpdatedAt).toLocaleDateString()}</td>
-							<td>{watch.gainNotified ? "Triggered" : "Live"}</td>
-							<td>{watch.lossNotified ? "Triggered" : "Live"}</td>
-							<td><button disabled={submitting} onClick={()=>handleNotifReset()}>Reset</button></td>
-						</tr>
-					</table>
-					<WatchForm
-						watch={{
-							ticker: watch.ticker,
-							purchasePrice: watch.purchasePrice.toString(),
-							gainPct: watch.gainPct.toString(),
-							lossPct: watch.lossPct.toString()
-						}}
-					onSubmit={handleSubmit} />
-				</div>
-			)}
-			<button type='button' onClick={() => navigate(`/users/${params.userid}`)}>Back</button>
+		<div className={pageContainerClass}>
+			<Banner/>
+			<div className="w-full p-3 border-4 rounded-3xl bg-gray-400 border-cyan-950">
+				{loading ? (
+					<div className={msgClass}>Loading StockWatch...</div>
+				) : loadError ? (
+					<div className={errorMsgClass}>Error Loading StockWatch</div>
+				) : (
+					<div className="flex-col justify-items-center space-y-10 mb-2">
+						<div className="flex space-x-2">
+							<p className={`${tickerClass} lg:text-3xl text-2xl`}>{watch.ticker}</p>
+							<p className={h2Class}>Stock Watch Summary</p>
+						</div>
+						<table className={tableClass}>
+							<tr>
+								<th className={tableHeaderClass}>Purchased Price</th>
+								<th className={tableHeaderClass}>Current Price</th>
+								<th className={tableHeaderClass}>% Change from Purchased</th>
+								<th className={tableHeaderClass}>Last Updated</th>
+								<th className={tableHeaderClass}>Gain Alert Status</th>
+								<th className={tableHeaderClass}>Loss Alert Status</th>
+								<th className={tableHeaderClass}>Reset Alerts</th>
+							</tr>
+							<tr>
+								<td className={tableEntryClass}>{`$${watch.purchasePrice}`}</td>
+								<td className={tableEntryClass}>{!watch.currentPrice ? "N/A" : `$${watch.currentPrice}`}</td>
+								<td className={tableEntryClass}>{!watch.currentPrice ? "N/A" : <ChangePctLabel pct={watch.changePct} />}</td>
+								<td className={tableEntryClass}>{!watch.currentPrice ? "N/A" : new Date(watch.priceUpdatedAt).toLocaleTimeString()}</td>
+								<td className={tableEntryClass}><AlertLabel alert={watch.gainNotified}/></td>
+								<td className={tableEntryClass}><AlertLabel alert={watch.lossNotified}/></td>
+								<td className={tableEntryClass}>
+									<Switch
+										disabled={submitting || (!watch.gainNotified && !watch.lossNotified)}
+										checked={!watch.gainNotified && !watch.lossNotified}
+										onCheckedChange={()=>handleNotifReset()}
+										className={`border-3 ${watch.gainNotified || watch.lossNotified ? 'border-amber-500 hover:shadow-md hover:shadow-yellow-600': ''}`}
+									/>
+								</td>
+							</tr>
+						</table>
+						{msg && <div className={msgClass}>{msg}</div>}
+						<WatchForm
+							watch={{
+								ticker: watch.ticker,
+								purchasePrice: watch.purchasePrice.toString(),
+								gainPct: watch.gainPct.toString(),
+								lossPct: watch.lossPct.toString()
+							}}
+						onSubmit={handleSubmit} />
+					</div>
+				)}
+				<Button type='button' onClick={() => navigate(`/users/${params.userid}`)} className={buttonClass}>Back</Button>
+			</div>
 		</div>
 	);
 }

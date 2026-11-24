@@ -55,7 +55,7 @@ export default function Dashboard() {
 			}
 			const data = await response.json();
 			setWatches((prev) => [...prev, data]);
-			navigate(`/users/${params.id}/watches/${data.id}`);
+			//navigate(`/users/${params.id}/watches/${data.id}`);
 		} catch {
       // TODO: Set message to "Error creating paper"
       // TODO: Return false

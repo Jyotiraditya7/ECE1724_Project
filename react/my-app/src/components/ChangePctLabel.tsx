@@ -6,7 +6,7 @@ type ChangePctProps = {
 
 export default function ChangePctLabel({pct}: ChangePctProps) {
 	return (
-		<div className={`flex justify-start self-center w-min h-12 px-3 space-x-2 border-2 rounded-full bg-cyan-800 ${pct>0?'border-green-600':'border-red-600'}`}>
+		<div className={`flex justify-self-center self-center w-min h-10 px-3 space-x-2 border-2 rounded-full bg-cyan-800 ${pct>0?'border-green-600':'border-red-600'}`}>
 			{pct > 0 ?
 				<FiArrowUp className="self-center border-2 rounded-full text-2xl border-green-600 bg-cyan-950 text-green-400 " /> :
 				<FiArrowDown className="self-center border-2 rounded-full text-2xl border-red-600 bg-cyan-950 text-red-500" />

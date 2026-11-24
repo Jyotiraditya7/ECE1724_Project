@@ -186,6 +186,7 @@ export default function LoginForm({watch, onSubmit}: WatchFormProps) {
 				</ButtonGroup>
 			</form>
 			{error && <div className="mt-3 text-red-600">{error}</div>}
+			{submitting && <div className="mt-3 text-gray-500">{watch?"Updating StockWatch...":"Creating StockWatch..."}</div>}
 		</div>
 	);
 }

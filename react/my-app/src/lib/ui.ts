@@ -15,10 +15,12 @@ export const tickerClass = "text-2xl font-extrabold text-gray-900";
 export const inputClass = "border rounded-md p-2 w-full h-8 bg-gray-200 focus:outline-none focus:ring-2 focus:ring-ring text-center";
 
 export const clickableText = "text-sm mt-1 text-gray-800 hover:text-gray-500";
-export const buttonClass = "border-2 rounded-full text-gray-200 hover:font-bold bg-cyan-900 border-cyan-600 hover:border-cyan-400";
-export const submitClass = "border-2 rounded-full text-gray-200 hover:text-green-300 hover:font-bold bg-cyan-900 border-cyan-600 hover:border-green-600";
-export const cancelClass = "border-2 rounded-full text-gray-200 hover:text-red-400 hover:font-bold bg-cyan-900 border-cyan-600 hover:border-red-700";
+export const buttonClass = "border-2 rounded-full text-gray-200 hover:font-bold bg-cyan-900 border-cyan-600 hover:border-cyan-400 hover:shadow-sm hover:shadow-cyan-400";
+export const submitClass = "border-2 rounded-full text-gray-200 hover:text-green-300 hover:font-bold bg-cyan-900 border-cyan-600 hover:border-green-600 hover:shadow-md hover:shadow-green-400";
+export const cancelClass = "border-2 rounded-full text-gray-200 hover:text-red-400 hover:font-bold bg-cyan-900 border-cyan-600 hover:border-red-700 hover:shadow-md hover:shadow-red-400";
 
 export const tableClass = "w-full border-collapse";
-export const tableHeaderClass = "w-1/7 p-1 border-2 border-cyan-950 bg-cyan-600";
-export const tableEntryClass = "w-1/7 p-1 border-2 border-cyan-950 bg-gray-700";
+export const tableHeaderClass = "w-1/7 p-1 border-2 text-md border-cyan-950 bg-cyan-600";
+export const tableEntryClass = "w-1/7 p-1 border-2 text-xl border-cyan-950 bg-gray-700 text-gray-300";
+
+export const alertIconClass = "rounded-full text-xl bg-orange-600 text-gray-100";
