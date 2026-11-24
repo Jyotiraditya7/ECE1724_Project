@@ -3,8 +3,8 @@ import WatchForm from "../components/WatchForm";
 import { useNavigate, useParams } from "react-router";
 import { useEffect, useState } from "react";
 import type { Watch, WatchPayload} from "../types";
-import { ButtonGroup } from "@/components/ui/button-group";
-import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "../components/ui/button-group";
+import { Button } from "../components/ui/button";
 import { headerClass, h1Class, pageContainerClass, errorMsgClass, msgClass, buttonClass } from "../lib/ui";
 
 export default function Dashboard() {

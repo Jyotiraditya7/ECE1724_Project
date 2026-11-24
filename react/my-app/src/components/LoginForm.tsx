@@ -4,7 +4,7 @@ import type { SubmitEvent } from "react";
 import type { LoginFormData } from "../types";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
-import { inputClass, submitClass } from "@/lib/ui";
+import { inputClass, submitClass } from "../lib/ui";
 
 const empty_form: LoginFormData = {
 	username: "",

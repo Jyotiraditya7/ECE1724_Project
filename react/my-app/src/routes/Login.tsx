@@ -4,8 +4,8 @@ import { useState } from "react";
 import LoginForm from "../components/LoginForm";
 import type { User, LoginFormData } from "../types";
 import { useNavigate } from "react-router";
-import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
+import { Separator } from "../components/ui/separator";
+import { Button } from "../components/ui/button";
 import { headerClass, h1Class, formHeaderClass, clickableText, pageContainerClass } from "../lib/ui";
 
 const TEMP_dummy_creds: User = {
@@ -109,7 +109,7 @@ export default function Login() {
 			{message && <Button
 					type='button'
 					disabled={!error}
-					className={`mt-3 p-2 border-2 rounded-full ${msgStyle[error.toString()]} bg-gray-200  border-cyan-800 `}
+					className={`mt-3 p-2 border-2 rounded-full ${msgStyle[error?"true":"false"]} bg-gray-200  border-cyan-800 `}
 					onClick={() => setMessage(null)}>
 			{message}</Button>}
 		</div>

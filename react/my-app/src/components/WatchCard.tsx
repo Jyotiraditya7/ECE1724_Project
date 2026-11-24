@@ -1,6 +1,6 @@
 import { FiAlertCircle, FiArrowUp, FiArrowDown } from "react-icons/fi"
-import {Button} from "@/components/ui/button"
-import { clickableText } from "@/lib/ui";
+import {Button} from "./ui/button"
+import { clickableText } from "../lib/ui";
 
 type WatchCardProps = {
 	id: number;
