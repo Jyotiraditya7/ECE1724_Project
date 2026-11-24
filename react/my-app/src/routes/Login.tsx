@@ -4,6 +4,8 @@ import { useState } from "react";
 import LoginForm from "../components/LoginForm";
 import type { User, LoginFormData } from "../types";
 import { useNavigate } from "react-router";
+import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 
 const TEMP_dummy_creds: User = {
 	id: "demo-user",
@@ -14,7 +16,13 @@ const TEMP_dummy_creds: User = {
 export default function Login() {
 	const navigate = useNavigate();
 	const [createNew, setCreateNew] = useState(false);	// Is the user logging in, or creating a new account?
-	const [message, setMessage] = useState<string|null>(null);
+	const [message, setMessage] = useState<string | null>(null);
+	const [error, setError] = useState(false);
+
+	const msgStyle = {
+		true: "text-red-400",
+		false: "text-cyan-900"
+	}
 
 	// Dummy function for checking account credentials
 	async function TEMP_check_credentials(form: LoginFormData) {
@@ -39,15 +47,19 @@ export default function Login() {
 	async function handleLogin(form: LoginFormData) {
 		// Validate form inputs
 		if (createNew && form.username.trim().length == 0) {
+			setError(true);
 			setMessage("Error: Please input a username");
     }
 		if (form.email.trim().length == 0) {
+			setError(true);
 			setMessage("Error: Please input an email");
 		}
 		if (form.password.trim().length == 0) {
+			setError(true);
 			setMessage("Error: Please input a password");
 		}
 		if (createNew && !(form.password === form.confirmPass)) {
+			setError(true);
 			setMessage("Error: Password and Confirm Password do not match");
     }
 
@@ -55,16 +67,20 @@ export default function Login() {
 		if (!createNew) {
 			const login_result = await (TEMP_check_credentials(form));	// TODO: connect to auth
 			if (login_result.error) {
+				setError(true);
 				setMessage(login_result.error);
 			} else {
+				setError(false);
 				setMessage("Logging in...");
 				navigate(`/users/${TEMP_dummy_creds.id}`)
 			}
 		} else {
 			const create_acc_result = await (TEMP_create_new_acc(form)); // TODO: connect to auth/backend
 			if (create_acc_result.error) {
+				setError(true);
 				setMessage(create_acc_result.error);
 			} else {
+				setError(false);
 				setMessage("Creating Account...");
 				navigate(`/users/${TEMP_dummy_creds.id}`)
 			}
@@ -72,15 +88,20 @@ export default function Login() {
 	}
 
 	return (
-		<div>
-			<h1>Money Watch</h1>
-			<h2>{createNew ? "Register for MoneyWatch" : "Sign In to MoneyWatch"}</h2>
-			<LoginForm createNew={createNew} onSubmit={handleLogin} />
-			<button type='button' onClick={() => {
-				setCreateNew(!createNew);
-				setMessage(null);
-			}}>{createNew ? "Return to Sign In" : "Create a New Account"}</button>
-			{message && <div>{message}</div>}
+		<div className='flex-col justify-items-center p-5'>
+			<header className='w-full md:mb-20 sm:mb-10 mb-5 p-7 border-3 rounded-2xl bg-blue-300 border-cyan-900'>
+				<h1 className='md:text-5xl sm:text-3xl text-2xl font-bold font-[Brush_Script_MT] text-gray-800 '>Stock Watch</h1>
+			</header>
+			<div className='md:w-1/3 md:h-1/2 w-1/2 px-5 pt-2 pb-3 border-3 rounded-lg bg-blue-200  border-cyan-900 '>
+				<p className='text-lg font-medium text-gray-800'>{createNew ? "Sign up for Stock Watch" : "Login to your account"}</p>
+				<Separator className='bg-gray-400'/>
+				<LoginForm createNew={createNew} onSubmit={handleLogin} />
+				<button type='button' onClick={() => {
+					setCreateNew(!createNew);
+					setMessage(null);
+				}}>{createNew ? "Return to Sign In" : "Create a New Account"}</button>
+			</div>
+			{message && <div className={`mt-3 p-2 border-2 rounded-full ${msgStyle[error.toString()]} bg-gray-200 border-cyan-800`}>{message}</div>}
 		</div>
 	);
 }
