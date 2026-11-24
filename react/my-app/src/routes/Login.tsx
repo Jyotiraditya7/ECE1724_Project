@@ -49,19 +49,23 @@ export default function Login() {
 		if (createNew && form.username.trim().length == 0) {
 			setError(true);
 			setMessage("Error: Please input a username");
+			return;
     }
 		if (form.email.trim().length == 0) {
 			setError(true);
 			setMessage("Error: Please input an email");
+			return;
 		}
 		if (form.password.trim().length == 0) {
 			setError(true);
 			setMessage("Error: Please input a password");
+			return;
 		}
 		if (createNew && !(form.password === form.confirmPass)) {
 			setError(true);
 			setMessage("Error: Password and Confirm Password do not match");
-    }
+			return;
+		}
 
 		// Are we creating a new account or logging in?
 		if (!createNew) {
