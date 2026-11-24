@@ -4,7 +4,7 @@ import { requireUser, type ResolveUserId } from "./auth";
 import { errorHandler, notFoundHandler } from "./errors";
 import { buildOpenApiDocument } from "./openapi";
 import { watchesRouter } from "./watches/routes";
-import { createNotificationRoutes } from "./notifications/routes";
+import { notificationsRouter } from "./notifications/routes";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/better-auth";
 
@@ -28,12 +28,7 @@ export function createApp(options: AppOptions) {
   });
 
   app.use("/api/watches", requireUser(options.resolveUserId), watchesRouter);
-  app.use(
-    "/api/alerts",
-    requireUser(options.resolveUserId),
-    createNotificationRoutes(options.resolveUserId),
-  );
-
+  app.use("/api/alerts", requireUser(options.resolveUserId), notificationsRouter);
   const openApiDocument = buildOpenApiDocument();
   app.get("/api/openapi.json", (_req, res) => {
     res.json(openApiDocument);
