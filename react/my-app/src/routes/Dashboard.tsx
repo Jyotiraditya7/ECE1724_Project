@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import type { Watch, WatchPayload} from "../types";
 import { ButtonGroup } from "../components/ui/button-group";
 import { Button } from "../components/ui/button";
-import { pageContainerClass, errorMsgClass, msgClass, buttonClass, h2Class } from "../lib/ui";
+import { pageContainerClass, errorMsgClass, msgClass, buttonClass, h2Class, errStatusMsgClass, statusMsgClass } from "../lib/ui";
 
 export default function Dashboard() {
 	const params = useParams();
@@ -14,7 +14,8 @@ export default function Dashboard() {
 
 	const [watches, setWatches] = useState<Watch[]>([]);
 	const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
+	const [loadError, setLoadError] = useState(false);
+	const [statusMsg, setStatusMsg] = useState<string | null>(null);
 
 	useEffect(() => {
 		async function loadWatches() {
@@ -27,10 +28,8 @@ export default function Dashboard() {
 				const data = await response.json();
 				setWatches(data);
 			} catch {
-				// TODO: Set loadError to true
 				setLoadError(true);
 			} finally {
-				// TODO: Set loading to false
 				setLoading(false);
 			}
 		}
@@ -55,11 +54,9 @@ export default function Dashboard() {
 			}
 			const data = await response.json();
 			setWatches((prev) => [...prev, data]);
-			//navigate(`/users/${params.id}/watches/${data.id}`);
+			navigate(`/users/${params.id}/watches/${data.id}`);
 		} catch {
-      // TODO: Set message to "Error creating paper"
-      // TODO: Return false
-			return;
+			setStatusMsg("Error creating watch");
     }
 	}
 
@@ -76,8 +73,9 @@ export default function Dashboard() {
 			}
 
 			setWatches((prev) => prev.filter((item) => item.id !== id));
+			setStatusMsg(`Deleted watch for ${ticker} stock`);
 		} catch {
-		  // TODO: Set message to "Error deleting paper"
+			setStatusMsg("Error deleting watch");
 		}
 	}
 
@@ -94,6 +92,13 @@ export default function Dashboard() {
 			<Banner/>
 			<div className='flex-col justify-items-center lg:w-2/3 w-full px-5 py-3 space-y-6 border-3 rounded-lg bg-blue-200  border-cyan-900 '>
 				<h2 className={h2Class}>{`Welcome Back ${params.id}`}</h2>
+				{!loadError && statusMsg && <Button
+					type='button'
+					onClick={() => setStatusMsg(null)}
+					className={`p-2 border-2 rounded-full bg-gray-200  border-cyan-800 ${statusMsg.includes('Error') ? errStatusMsgClass : statusMsgClass}`}
+				>
+					{statusMsg}
+				</Button>}
 				{loading ? (
 					<div className={msgClass}>Loading StockWatches...</div>
 	      ) : loadError ? (

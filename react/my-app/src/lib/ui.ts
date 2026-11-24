@@ -7,8 +7,13 @@ export const h1Class = "lg:text-5xl text-3xl font-bold font-[Brush_Script_MT] te
 export const h2Class = "lg:text-3xl text-2xl font-medium text-gray-800";
 export const formHeaderClass = "lg:text-2xl text-lg font-medium text-gray-800";
 
+// For Non-dismissable status messages
 export const msgClass = "lg:text-3xl text-xl text-gray-500";
 export const errorMsgClass = "lg:text-3xl text-xl text-red-700";
+
+// For dismissable status messages
+export const statusMsgClass = "text-cyan-900 hover:text-cyan-400 hover:border-cyan-700";
+export const errStatusMsgClass = "text-red-600 hover:text-red-300 hover:border-red-500";
 
 export const tickerClass = "text-2xl font-extrabold text-gray-900";
 

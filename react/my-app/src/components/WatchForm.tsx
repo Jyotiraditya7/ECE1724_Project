@@ -49,11 +49,11 @@ export default function LoginForm({watch, onSubmit}: WatchFormProps) {
 			return;
 		}
 		if (form.purchasePrice.includes('e')) {
-			setError("Error: Please input a valid purchasing price (No Exponentials)");
+			setError("Error: Please input a valid purchasing price\n(No Exponentials)");
 			return;
 		}
 		if (form.purchasePrice.includes('.') && form.purchasePrice.split('.')[1].length > 2) {
-			setError("Error: Please input a valid purchasing price (Too Many Decimals)");
+			setError("Error: Please input a valid purchasing price\n(Too Many Decimals)");
 			return;
 		}
 		if (Number(form.purchasePrice) <= 0) {
@@ -67,7 +67,7 @@ export default function LoginForm({watch, onSubmit}: WatchFormProps) {
 			return;
 		}
 		if (form.gainPct.includes('e')) {
-			setError("Error: Please input a valid Gain Alert % (No Exponentials");
+			setError("Error: Please input a valid Gain Alert %\n(No Exponentials");
 			return;
 		}
 		if (Number(form.gainPct) <= 0) {
@@ -81,7 +81,7 @@ export default function LoginForm({watch, onSubmit}: WatchFormProps) {
 			return;
 		}
 		if (form.lossPct.includes('e')) {
-			setError("Error: Please input a valid Loss Alert % (No Exponentials");
+			setError("Error: Please input a valid Loss Alert %\n(No Exponentials");
 			return;
 		}
 		if (Number(form.lossPct) >= 0) {
@@ -101,6 +101,12 @@ export default function LoginForm({watch, onSubmit}: WatchFormProps) {
 		setSubmitting(true);
 		try {
 			onSubmit(payload);
+		} catch {
+			if (watch) {
+				setError("Error updating StockWatch");
+			} else {
+				setError("Error creating StockWatch");
+			}
 		} finally {
 			setSubmitting(false);
 			setError(null);

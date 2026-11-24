@@ -6,7 +6,7 @@ import type { User, LoginFormData } from "../types";
 import { useNavigate } from "react-router";
 import { Separator } from "../components/ui/separator";
 import { Button } from "../components/ui/button";
-import { formHeaderClass, clickableText, pageContainerClass } from "../lib/ui";
+import { formHeaderClass, clickableText, pageContainerClass, errStatusMsgClass } from "../lib/ui";
 import Banner from "../components/Banner";
 
 const TEMP_dummy_creds: User = {
@@ -19,19 +19,13 @@ export default function Login() {
 	const navigate = useNavigate();
 	const [createNew, setCreateNew] = useState(false);	// Is the user logging in, or creating a new account?
 	const [message, setMessage] = useState<string | null>(null);
-	const [error, setError] = useState(false);
-
-	const msgStyle = {
-		true: "text-red-600 hover:text-red-300 hover:border-red-500",
-		false: "text-cyan-900"
-	}
 
 	// Dummy function for checking account credentials
 	async function TEMP_check_credentials(form: LoginFormData) {
 		if (form.email === TEMP_dummy_creds.email && form.password == TEMP_dummy_creds.password) {
 			return {error: null};
 		} else {
-			return {error: "Invalid Credentials"};
+			return {error: "Error: Invalid Credentials"};
 		}
 	}
 
@@ -49,22 +43,18 @@ export default function Login() {
 	async function handleLogin(form: LoginFormData) {
 		// Validate form inputs
 		if (createNew && form.username.trim().length == 0) {
-			setError(true);
 			setMessage("Error: Please input a username");
 			return;
     }
 		if (form.email.trim().length == 0) {
-			setError(true);
 			setMessage("Error: Please input an email");
 			return;
 		}
 		if (form.password.trim().length == 0) {
-			setError(true);
 			setMessage("Error: Please input a password");
 			return;
 		}
 		if (createNew && !(form.password === form.confirmPass)) {
-			setError(true);
 			setMessage("Error: Password and Confirm Password do not match");
 			return;
 		}
@@ -73,20 +63,16 @@ export default function Login() {
 		if (!createNew) {
 			const login_result = await (TEMP_check_credentials(form));	// TODO: connect to auth
 			if (login_result.error) {
-				setError(true);
 				setMessage(login_result.error);
 			} else {
-				setError(false);
 				setMessage("Logging in...");
 				navigate(`/users/${TEMP_dummy_creds.id}`)
 			}
 		} else {
 			const create_acc_result = await (TEMP_create_new_acc(form)); // TODO: connect to auth/backend
 			if (create_acc_result.error) {
-				setError(true);
 				setMessage(create_acc_result.error);
 			} else {
-				setError(false);
 				setMessage("Creating Account...");
 				navigate(`/users/${TEMP_dummy_creds.id}`)
 			}
@@ -107,8 +93,8 @@ export default function Login() {
 			</div>
 			{message && <Button
 					type='button'
-					disabled={!error}
-					className={`mt-3 p-2 border-2 rounded-full ${msgStyle[error?"true":"false"]} bg-gray-200  border-cyan-800 `}
+					disabled={!message.includes("Error")}
+					className={`mt-3 p-2 border-2 rounded-full ${message.includes("Error")?errStatusMsgClass:"text-cyan-900"} bg-gray-200  border-cyan-800`}
 					onClick={() => setMessage(null)}>
 			{message}</Button>}
 		</div>
