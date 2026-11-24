@@ -154,6 +154,35 @@ registry.registerPath({
   },
 });
 
+const alertStreamExample = [
+  "event: connected",
+  'data: {"userId":"demo-user","connectedAt":"2026-11-23T15:00:00.000Z"}',
+  "",
+  "event: alert",
+  'data: {"type":"gain","watchId":1,"userId":"demo-user","userEmail":"demo@example.com",' +
+    '"ticker":"AAPL","currentPrice":231.5,"purchasePrice":200,"changePct":15.75}',
+  "",
+  "",
+].join("\n");
+
+registry.registerPath({
+  method: "get",
+  path: "/api/alerts/stream",
+  tags: ["Alerts"],
+  summary: "Live stream of the signed-in user's gain/loss alerts (server-sent events)",
+  description:
+    "Stays open. Sends `connected` once, then an `alert` event each time the price poller " +
+    "crosses one of the user's thresholds (once per threshold until the watch is edited), " +
+    "and a `: ping` comment every 25 seconds. In the browser: `new EventSource(\"/api/alerts/stream\")`.",
+  responses: {
+    200: {
+      description: "Event stream",
+      content: { "text/event-stream": { schema: z.string().meta({ example: alertStreamExample }) } },
+    },
+    401: errors[401],
+  },
+});
+
 export function buildOpenApiDocument() {
   return new OpenApiGeneratorV3(registry.definitions).generateDocument({
     openapi: "3.0.3",

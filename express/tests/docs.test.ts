@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { app } from "./helpers";
 
 describe("API documentation", () => {
-  it("serves an OpenAPI document covering every watch endpoint", async () => {
+  it("serves an OpenAPI document covering every endpoint", async () => {
     const res = await request(app).get("/api/openapi.json");
 
     expect(res.status).toBe(200);
@@ -13,6 +13,13 @@ describe("API documentation", () => {
     expect(methods("/api/watches/{id}")).toEqual(["delete", "get", "patch"]);
     expect(methods("/api/watches/{id}/prices")).toEqual(["get"]);
     expect(methods("/api/watches/{id}/prices.csv")).toEqual(["get"]);
+    expect(methods("/api/alerts/stream")).toEqual(["get"]);
+  });
+
+  it("documents the alert stream as server-sent events", async () => {
+    const res = await request(app).get("/api/openapi.json");
+    const ok = res.body.paths["/api/alerts/stream"]?.get?.responses?.["200"];
+    expect(Object.keys(ok?.content ?? {})).toEqual(["text/event-stream"]);
   });
 
   it("documents the CSV download as text/csv", async () => {

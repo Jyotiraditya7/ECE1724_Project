@@ -11,6 +11,7 @@ export default defineConfig({
     // Point the app's Prisma client at the test database, never the dev one.
     env: {
       DATABASE_URL: testDatabaseUrl,
+      FINNHUB_API_KEY: "",
       DO_SPACES_ENDPOINT: "",
       DO_SPACES_REGION: "",
       DO_SPACES_BUCKET: "",

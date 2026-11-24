@@ -105,6 +105,61 @@ describe("POST /api/watches", () => {
   });
 });
 
+describe("POST /api/watches ticker check (FINNHUB_API_KEY set)", () => {
+  beforeEach(() => {
+    vi.stubEnv("FINNHUB_API_KEY", "test-finnhub-key");
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  /** Fakes Finnhub's quote endpoint so no test calls the real one. */
+  function stubFinnhub(response: Response | Error) {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    if (response instanceof Error) fetchSpy.mockRejectedValue(response);
+    else fetchSpy.mockResolvedValue(response);
+    return fetchSpy;
+  }
+
+  it("creates the watch when Finnhub knows the ticker", async () => {
+    const fetchSpy = stubFinnhub(Response.json({ c: 231.5, pc: 230 }));
+
+    const res = await asUser(ALICE)
+      .post("/api/watches")
+      .send({ ...validWatch, ticker: " brk.b " });
+
+    expect(res.status).toBe(201);
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const url = new URL(String(fetchSpy.mock.calls[0]?.[0]));
+    expect(url.searchParams.get("symbol")).toBe("BRK.B");
+    expect(url.searchParams.get("token")).toBe("test-finnhub-key");
+  });
+
+  it("rejects a ticker Finnhub doesn't know with 400 and saves nothing", async () => {
+    stubFinnhub(Response.json({ c: 0, pc: 0 }));
+
+    const res = await asUser(ALICE).post("/api/watches").send({ ...validWatch, ticker: "ZZZZ" });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ error: "Unknown ticker: ZZZZ" });
+    expect(await prisma.watch.count()).toBe(0);
+    expect(await prisma.stock.count()).toBe(0);
+  });
+
+  it.each([
+    ["answers with an error status", new Response("rate limited", { status: 429 })],
+    ["can't be reached", new TypeError("fetch failed")],
+  ])("returns 502 and saves nothing when Finnhub %s", async (_label, response) => {
+    stubFinnhub(response);
+
+    const res = await asUser(ALICE).post("/api/watches").send(validWatch);
+
+    expect(res.status).toBe(502);
+    expect(res.body).toEqual({ error: "Failed to verify ticker with Finnhub" });
+    expect(await prisma.watch.count()).toBe(0);
+  });
+});
+
 describe("GET /api/watches", () => {
   it("lists only the signed-in user's watches, sorted by ticker", async () => {
     await asUser(ALICE).post("/api/watches").send({ ...validWatch, ticker: "MSFT" });
