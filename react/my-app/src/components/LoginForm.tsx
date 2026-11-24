@@ -3,6 +3,8 @@
 import type { SubmitEvent } from "react";
 import type { LoginFormData } from "../types";
 import { useEffect, useState } from "react";
+import { Button } from "./ui/button";
+import { inputClass, submitClass } from "../lib/ui";
 
 const empty_form: LoginFormData = {
 	username: "",
@@ -43,70 +45,70 @@ export default function LoginForm({createNew, onSubmit }: LoginFormProps) {
 	}
 
 	return (
-		<div>
-			<form
-	      noValidate
-	      onSubmit={handleSubmit}
-    	>
-	      <div>
-					{createNew && <div>
-				     <label htmlFor="Username">Username:</label>
-				     <input
-				       id="username"
-				       name="username"
-				       type="text"
-				       value={form.username}
-				       disabled={submitting}
-				       onChange={(event) => {
-								setForm({...form, username: event.target.value})
-				       }}
-				     />
-					</div>}
-	        <label htmlFor="email">Email:</label>
-	        <input
-	          id="email"
-	          name="email"
-	          type="text"
-	          value={form.email}
-	          disabled={submitting}
-	          onChange={(event) => {
-						setForm({ ...form, email: event.target.value })
-	          }}
-	        />
-	      </div>
-
-	      <div>
-	        <label htmlFor="password">Password:</label>
-	        <input
-	          id="password"
-	          name="password"
-	          type="text"
-	          value={form.password}
-	          disabled={submitting}
-	          onChange={(event) => {
-						setForm({...form, password: event.target.value})
-	          }}
-	        />
-				</div>
-				{createNew && <div>
-			     <label htmlFor="confirm">Confirm Password:</label>
-			     <input
-			       id="confirm"
-			       name="confirm"
-			       type="text"
-			       value={form.confirmPass}
-			       disabled={submitting}
-			       onChange={(event) => {
-							setForm({...form, confirmPass: event.target.value})
-			       }}
-			     />
-				</div>}
-				<div>
-	        <button type="submit" disabled={submitting}>
-	          {createNew ? "Create New Account" : "Sign In"}
-	        </button>
-				</div>
-	    </form>
-		</div>
+		<form
+      noValidate
+      onSubmit={handleSubmit}
+			className="mt-3 space-y-4"
+   	>
+    		{createNew && <div>
+		  	<label htmlFor="Username">Username:</label>
+				<input
+					id="username"
+					name="username"
+					type="text"
+					className={ inputClass }
+		      value={form.username}
+		      disabled={submitting}
+		      onChange={(event) => {
+						setForm({...form, username: event.target.value})
+		      }}
+		     />
+			</div>}
+     	<div>
+        <label htmlFor="email">Email:</label>
+        <input
+          id="email"
+          name="email"
+          type="text"
+					className={ inputClass }
+          value={form.email}
+          disabled={submitting}
+          onChange={(event) => {
+					setForm({ ...form, email: event.target.value })
+          }}
+        />
+      </div>
+      <div>
+        <label htmlFor="password">Password:</label>
+        <input
+          id="password"
+          name="password"
+          type="text"
+					className={ inputClass }
+          value={form.password}
+          disabled={submitting}
+          onChange={(event) => {
+					setForm({...form, password: event.target.value})
+          }}
+        />
+			</div>
+			{createNew && <div>
+		    <label htmlFor="confirm">Confirm Password:</label>
+		    <input
+		    	id="confirm"
+		      name="confirm"
+		      type="text"
+					className={ inputClass }
+		      value={form.confirmPass}
+		      disabled={submitting}
+		      onChange={(event) => {
+						setForm({...form, confirmPass: event.target.value})
+		      }}
+		    />
+			</div>}
+      <Button type="submit" disabled={submitting} className={submitClass}>
+        {createNew ? "Create New Account" : "Sign In"}
+      </Button>
+    </form>
 	);
 }

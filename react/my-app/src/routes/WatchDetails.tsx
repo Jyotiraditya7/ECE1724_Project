@@ -2,6 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import type { Watch, WatchPayload} from "../types";
 import WatchForm from "../components/WatchForm";
+import { pageContainerClass, msgClass, errorMsgClass, h2Class, tickerClass, tableClass, tableHeaderClass, tableEntryClass, buttonClass, errStatusMsgClass, statusMsgClass } from "../lib/ui";
+import ChangePctLabel from "../components/ChangePctLabel";
+import Banner from "../components/Banner";
+import { Button } from "../components/ui/button";
+import AlertLabel from "../components/AlertLabel";
+import { Switch } from "../components/ui/switch";
 
 // This will all be fetched from backend using Watch id number passed in as route param
 const empty_watch: Watch = {
@@ -25,10 +31,13 @@ export default function WatchDetails() {
 	const navigate = useNavigate();
 
 	const [watch, setWatch] = useState(empty_watch);
-	const [submitting, setSubmitting] = useState(false);
 	const [loading, setLoading] = useState(true);
 	const [loadError, setLoadError] = useState(false);
+	const [statusMsg, setStatusMsg] = useState<string | null>(null);
+	const [submitting, setSubmitting] = useState(false);	// used when updating alert display
+	const [locked, setLocked] = useState(false);					// used for race conditions
 
+	// Load watch on page refresh
 	useEffect(() => {
 		async function loadWatch() {
 			try {
@@ -40,20 +49,48 @@ export default function WatchDetails() {
 				const data = await response.json();
 				setWatch(data);
 			} catch {
-				// TODO: Set loadError to true
 				setLoadError(true);
 			} finally {
-				// TODO: Set loading to false
 				setLoading(false);
 			}
 		}
 		loadWatch();
 	}, [params.watchid]);
 
+	// Live update watch every 10 seconds
+	useEffect(() => {
+		async function loadWatch() {
+			if (locked) return;
+			try {
+				setLocked(true);
+				const response = await fetch(`/api/watches/${params.watchid}`);
+
+				if (!response.ok) {
+					throw new Error("Error loading watches");
+				}
+				const data = await response.json();
+				setWatch(data);
+			} catch {
+				setStatusMsg("Error updating watch");
+			} finally {
+				setLocked(false);
+			}
+		}
+
+		const intervalId = setInterval(() => {
+			loadWatch();
+		}, 10000);
+		return () => {
+			clearInterval(intervalId);
+		}
+	}, [params.watchid, watch, locked]);
+
+	//Update Watch submission handler
 	async function handleSubmit(payload: WatchPayload) {
+		if (locked) return;
 		try {
-			if (submitting) throw new Error("Error updating watch: Submission Handler Busy");
 			setSubmitting(true);
+			setLocked(true);
 			const response = await fetch(`/api/watches/${params.watchid}`, {
 				method: "PATCH",
 				headers: { "Content-Type": "application/json" },
@@ -63,81 +100,115 @@ export default function WatchDetails() {
 			if (!response.ok) {
 				throw new Error("Error updating watch");
 			}
-			navigate(`/users/${params.userid}`);
+
+			const data = await response.json()
+			setWatch(data);
+			setStatusMsg("Updated Watch")
 		} catch {
-      // TODO: Set message to "Error creating paper"
-      // TODO: Return false
+			setStatusMsg("Error updating watch")
 		} finally {
 			setSubmitting(false);
+			setLocked(false);
 		}
 	}
 
+	// Reset Notif handler
 	async function handleNotifReset() {
 		//If submitting is true, the notifs will be reset by the other submission process
-		if (submitting) return;
+		if (locked) return;
 		// Send a copy of the watch as a WatchPayload to trigger alert reset
 		const payload: WatchPayload = { ticker: watch.ticker, purchasePrice: watch.purchasePrice, gainPct: watch.gainPct, lossPct: watch.lossPct };
 
 		try {
 			setSubmitting(true);
+			setLocked(true);
 			const response = await fetch(`/api/watches/${params.watchid}`, {
 				method: "PATCH",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(payload),
 			})
 			if (!response.ok) {
-				throw new Error("Error updating watch");
+				throw new Error("Error resetting alerts");
 			}
 			const data = await response.json();
 			setWatch(data);
+			setStatusMsg("Alerts Reset Successfully");
 
 		} catch {
-      // TODO: Set message to "Error creating paper"
-      // TODO: Return false
+			setStatusMsg("Error resetting alerts");
 		} finally {
 			setSubmitting(false);
+			setLocked(false);
     }
 	}
 
 	return (
-		<div>
-			<h1>Money Watch</h1>
-			{loading ? (
-				<div>Loading StockWatch...</div>
-			) : loadError ? (
-				<div>Error Loading StockWatch</div>
-			) : (
-				<div>
-					<h2>{`${watch.ticker} Stock Watch Summary`}</h2>
-					<table>
-						<tr>
-							<th>Purchased Price</th>
-							<th>Current Price</th>
-							{<th>Last Updated</th>}
-							<th>Gain Alert Status</th>
-							<th>Loss Alert Status</th>
-							<th>Reset Alerts</th>
-						</tr>
-						<tr>
-							<td>{watch.purchasePrice}</td>
-							<td>{!watch.currentPrice ? "N/A" : watch.currentPrice}</td>
-							<td>{!watch.currentPrice ? "N/A" : new Date(watch.priceUpdatedAt).toLocaleDateString()}</td>
-							<td>{watch.gainNotified ? "Triggered" : "Live"}</td>
-							<td>{watch.lossNotified ? "Triggered" : "Live"}</td>
-							<td><button disabled={submitting} onClick={()=>handleNotifReset()}>Reset</button></td>
-						</tr>
-					</table>
-					<WatchForm
-						watch={{
-							ticker: watch.ticker,
-							purchasePrice: watch.purchasePrice.toString(),
-							gainPct: watch.gainPct.toString(),
-							lossPct: watch.lossPct.toString()
-						}}
-					onSubmit={handleSubmit} />
-				</div>
-			)}
-			<button type='button' onClick={() => navigate(`/users/${params.userid}`)}>Back</button>
+		<div className={pageContainerClass}>
+			<Banner/>
+			<div className="w-full p-3 border-4 rounded-3xl bg-gray-400 border-cyan-950">
+				{/*Non-Dismissable status/error messages*/}
+				{loading ? (
+					<div className={msgClass}>Loading StockWatch...</div>
+				) : loadError ? (
+					<div className={errorMsgClass}>Error Loading StockWatch</div>
+				) : (
+					<div className="flex-col justify-items-center space-y-10 mb-2">
+						{/*Pack ticker and subheader in a div as seperate elements so ticker can be styled seperately*/}
+						<div className="flex space-x-2">
+							<p className={`${tickerClass} lg:text-3xl text-2xl`}>{watch.ticker}</p>
+							<p className={h2Class}>Stock Watch Summary</p>
+						</div>
+						<div>
+							{/*Dismissable status/error messages*/}
+							{statusMsg && <Button
+								type='button'
+								onClick={() => setStatusMsg(null)}
+								className={`mb-3 p-2 border-2 rounded-full bg-gray-200  border-cyan-800 ${statusMsg.includes('Error') ? errStatusMsgClass : statusMsgClass}`}
+							>
+								{statusMsg}
+							</Button>}
+							<table className={tableClass}>
+								<tr>
+									<th className={tableHeaderClass}>Purchased Price</th>
+									<th className={tableHeaderClass}>Current Price</th>
+									<th className={tableHeaderClass}>% Change from Purchased</th>
+									<th className={tableHeaderClass}>Last Updated</th>
+									<th className={tableHeaderClass}>Gain Alert Status</th>
+									<th className={tableHeaderClass}>Loss Alert Status</th>
+									<th className={tableHeaderClass}>Reset Alerts</th>
+								</tr>
+								<tr>
+									<td className={tableEntryClass}>{`$${watch.purchasePrice}`}</td>
+									<td className={tableEntryClass}>{!watch.currentPrice ? "N/A" : `$${watch.currentPrice}`}</td>
+									<td className={tableEntryClass}>{!watch.currentPrice ? "N/A" : <ChangePctLabel pct={watch.changePct} />}</td>
+									<td className={tableEntryClass}>{!watch.currentPrice ? "N/A" : new Date(watch.priceUpdatedAt).toLocaleTimeString()}</td>
+											<td className={tableEntryClass}><AlertLabel alert={watch.gainNotified} resetting={submitting} /></td>
+											<td className={tableEntryClass}><AlertLabel alert={watch.lossNotified} resetting={submitting} /></td>
+									<td className={tableEntryClass}>
+										{/*Reset Alerts switch*/}
+										<Switch
+											disabled={submitting || (!watch.gainNotified && !watch.lossNotified)}
+											checked={!watch.gainNotified && !watch.lossNotified}
+											onCheckedChange={()=>handleNotifReset()}
+											className={`border-3 ${watch.gainNotified || watch.lossNotified ? 'border-amber-500 hover:shadow-md hover:shadow-yellow-600': ''}`}
+										/>
+									</td>
+								</tr>
+							</table>
+						</div>
+						<WatchForm
+							watch={{
+								ticker: watch.ticker,
+								purchasePrice: watch.purchasePrice.toString(),
+								gainPct: watch.gainPct.toString(),
+								lossPct: watch.lossPct.toString()
+							}}
+							locked={locked}
+						onSubmit={handleSubmit} />
+					</div>
+				)}
+				<Button type='button' onClick={() => navigate(`/users/${params.userid}`)} className={buttonClass}>Back</Button>
+			</div>
 		</div>
 	);
 }

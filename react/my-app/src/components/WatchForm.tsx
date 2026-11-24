@@ -3,6 +3,10 @@
 import type { SubmitEvent } from "react";
 import type { WatchFormData, WatchPayload } from "../types";
 import { useState } from "react";
+import { cancelClass, formHeaderClass, inputClass, submitClass } from "../lib/ui";
+import { Separator } from "./ui/separator";
+import { ButtonGroup } from "./ui/button-group";
+import { Button } from "./ui/button";
 
 const empty_form: WatchFormData = {
 	ticker: "",
@@ -13,10 +17,11 @@ const empty_form: WatchFormData = {
 
 type WatchFormProps = {
 	watch?: WatchFormData;
+	locked: boolean;
 	onSubmit: (payload: WatchPayload) => void;
 }
 
-export default function LoginForm({watch, onSubmit}: WatchFormProps) {
+export default function LoginForm({watch, locked, onSubmit}: WatchFormProps) {
 
 	const [submitting, setSubmitting] = useState(false);// Prevent multiple form submissions
 	const [error, setError] = useState<string | null>(null);
@@ -30,7 +35,7 @@ export default function LoginForm({watch, onSubmit}: WatchFormProps) {
 	// Disable form while calling onSubmit
 	async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
 		event.preventDefault();
-		if (submitting) return;
+		if (submitting || locked) return;
 
 		// Validate Form Inputs
 		// ticker needs to be non-empty string
@@ -45,11 +50,11 @@ export default function LoginForm({watch, onSubmit}: WatchFormProps) {
 			return;
 		}
 		if (form.purchasePrice.includes('e')) {
-			setError("Error: Please input a valid purchasing price (No Exponentials)");
+			setError("Error: Please input a valid purchasing price\n(No Exponentials)");
 			return;
 		}
 		if (form.purchasePrice.includes('.') && form.purchasePrice.split('.')[1].length > 2) {
-			setError("Error: Please input a valid purchasing price (Too Many Decimals)");
+			setError("Error: Please input a valid purchasing price\n(Too Many Decimals)");
 			return;
 		}
 		if (Number(form.purchasePrice) <= 0) {
@@ -63,11 +68,11 @@ export default function LoginForm({watch, onSubmit}: WatchFormProps) {
 			return;
 		}
 		if (form.gainPct.includes('e')) {
-			setError("Error: Please input a valid Gain Alert % (No Exponentials");
+			setError("Error: Please input a valid Gain Alert %\n(No Exponentials");
 			return;
 		}
-		if (Number(form.gainPct) <= 0) {
-			setError("Error: Gain Alert % must be greater than 0");
+		if (Number(form.gainPct) < 0) {
+			setError("Error: Gain Alert % must be >= 0");
 			return;
 		}
 
@@ -77,11 +82,11 @@ export default function LoginForm({watch, onSubmit}: WatchFormProps) {
 			return;
 		}
 		if (form.lossPct.includes('e')) {
-			setError("Error: Please input a valid Loss Alert % (No Exponentials");
+			setError("Error: Please input a valid Loss Alert %\n(No Exponentials");
 			return;
 		}
-		if (Number(form.lossPct) >= 0) {
-			setError("Error: Loss Alert % must be less than 0");
+		if (Number(form.lossPct) < 0) {
+			setError("Error: Loss Alert % must be >= 0");
 			return;
 		}
 
@@ -90,13 +95,19 @@ export default function LoginForm({watch, onSubmit}: WatchFormProps) {
 			ticker: form.ticker,
 			purchasePrice: Number(form.purchasePrice),
 			gainPct: Number(form.gainPct),
-			lossPct: Number(form.lossPct)
+			lossPct: -Number(form.lossPct)
 		}
 
-
+		//Race Condition Protection
 		setSubmitting(true);
 		try {
 			onSubmit(payload);
+		} catch {
+			if (watch) {
+				setError("Error updating StockWatch");
+			} else {
+				setError("Error creating StockWatch");
+			}
 		} finally {
 			setSubmitting(false);
 			setError(null);
@@ -104,18 +115,22 @@ export default function LoginForm({watch, onSubmit}: WatchFormProps) {
 	}
 
 	return (
-		<div>
-			<div>{watch ? "Edit Stock Watch" : "Create New Stock Watch"}</div>
+		<div className="xl:w-1/3 w-1/2 p-3 border-4 rounded-3xl border-cyan-700 bg-blue-300">
+			<div className={formHeaderClass}>{watch ? "Update Stock Watch" : "Create New Stock Watch"}</div>
+			<Separator className="bg-cyan-900" />
+			{/*Only show Ticker input field when creating new watch*/}
 			<form
 	      noValidate
 	      onSubmit={handleSubmit}
+				className="flex-col justify-items-center mt-3 space-y-4"
     	>
-				{!watch && <div>
+				{!watch && <div className="w-full">
 					<label htmlFor="Ticker">Ticker:</label>
 					<input
 						id="ticker"
 						name="ticker"
 						type="text"
+						className={ inputClass }
 						value={form.ticker}
 						disabled={submitting}
 						onChange={(event) => {
@@ -123,12 +138,13 @@ export default function LoginForm({watch, onSubmit}: WatchFormProps) {
 						}}
 					/>
 				</div>}
-				<div>
+				<div className="w-full">
 	        <label htmlFor="purchasePrice">Purchasing Price:</label>
 	        <input
 	          id="purchasePrice"
 	          name="purchasePrice"
 	          type="number"
+						className={ inputClass }
 	          value={form.purchasePrice}
 	          disabled={submitting}
 	          onChange={(event) => {
@@ -136,13 +152,13 @@ export default function LoginForm({watch, onSubmit}: WatchFormProps) {
 	          }}
 	        />
 	      </div>
-
-	      <div>
+	      <div className="w-full">
 	        <label htmlFor="gainPct">Gain Alert %:</label>
 	        <input
 	          id="gainPct"
 	          name="gainPct"
 	          type="number"
+						className={ inputClass }
 	          value={form.gainPct}
 	          disabled={submitting}
 	          onChange={(event) => {
@@ -150,22 +166,23 @@ export default function LoginForm({watch, onSubmit}: WatchFormProps) {
 	          }}
 	        />
 				</div>
-				<div>
+				<div className="w-full">
 			     <label htmlFor="lossPct">Loss Alert %:</label>
 			     <input
-			       id="lossPct"
-			       name="lossPct"
-			       type="number"
-			       value={form.lossPct}
-			       disabled={submitting}
-			       onChange={(event) => {
+		       	id="lossPct"
+			      name="lossPct"
+				    type="number"
+						className={ inputClass }
+			      value={form.lossPct}
+			      disabled={submitting}
+			      onChange={(event) => {
 							setForm({...form, lossPct: event.target.value})
-			       }}
-			     />
+			      }}
+			    />
 				</div>
-				<div>
-					<button type="submit" disabled={submitting}>{ watch ? "Update Stock Watch" : "Submit new Stock Watch"}</button>
-					<button type="button" disabled={submitting} onClick={() => {
+				<ButtonGroup className="justify-center align-middle">
+					<Button type="submit" disabled={submitting||locked} className={submitClass}>Submit</Button>
+					<Button type="button" disabled={submitting||locked} className={cancelClass}  onClick={() => {
 						setForm(watch ? {
 							ticker: watch.ticker,
 							purchasePrice: watch.purchasePrice,
@@ -173,10 +190,12 @@ export default function LoginForm({watch, onSubmit}: WatchFormProps) {
 							lossPct: watch.lossPct
 						} : empty_form);
 						setError(null);
-					}}>{watch ? "Reset Form" : "Clear Form"}</button>
-				</div>
+						}}>{watch ? "Reset" : "Clear"}</Button>
+				</ButtonGroup>
 			</form>
-			{error && <p>{error}</p>}
+			{/*Error and Status Messages*/}
+			{error && <div className="mt-3 text-red-600">{error}</div>}
+			{submitting && <div className="mt-3 text-gray-500">{watch?"Updating StockWatch...":"Creating StockWatch..."}</div>}
 		</div>
 	);
 }
