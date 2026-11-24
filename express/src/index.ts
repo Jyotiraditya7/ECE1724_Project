@@ -1,13 +1,15 @@
 import "dotenv/config";
 import { createApp } from "./app";
-import { resolveSessionUserId } from "./auth";
+import { resolveDevUserId, resolveSessionUserId } from "./auth";
 import { startPricePoller } from "./pricePoller";
 import { broadcastAlertSse } from "./notifications/sse";
 import { sendThresholdAlertEmail } from "./notifications/email";
 
 const port = Number(process.env["PORT"] ?? 3000);
 
-createApp({ resolveUserId: resolveSessionUserId }).listen(port, () => {
+createApp({
+  resolveUserId: async (req) => (await resolveSessionUserId(req)) ?? resolveDevUserId(req),
+}).listen(port, () => {
   console.log(`API listening on http://localhost:${port}`);
 });
 
