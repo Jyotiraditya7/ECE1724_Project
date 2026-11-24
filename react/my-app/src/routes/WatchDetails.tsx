@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import type { Watch, WatchPayload} from "../types";
 import WatchForm from "../components/WatchForm";
-import { pageContainerClass, msgClass, errorMsgClass, h2Class, tickerClass, tableClass, tableHeaderClass, tableEntryClass, submitClass, buttonClass, alertIconClass } from "../lib/ui";
+import { pageContainerClass, msgClass, errorMsgClass, h2Class, tickerClass, tableClass, tableHeaderClass, tableEntryClass, buttonClass } from "../lib/ui";
 import ChangePctLabel from "../components/ChangePctLabel";
 import Banner from "../components/Banner";
 import { Button } from "../components/ui/button";
