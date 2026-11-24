@@ -4,6 +4,7 @@ import type { SubmitEvent } from "react";
 import type { LoginFormData } from "../types";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
+import { inputClass, submitClass } from "@/lib/ui";
 
 const empty_form: LoginFormData = {
 	username: "",
@@ -52,11 +53,11 @@ export default function LoginForm({createNew, onSubmit }: LoginFormProps) {
     	>
      		{createNew && <div>
 			  	<label htmlFor="Username">Username:</label>
-			    <input
-			    	id="username"
-			      name="username"
+					<input
+						id="username"
+						name="username"
 						type="text"
-						className="border rounded-md p-2 w-full h-8 bg-gray-200 focus:outline-none focus:ring-2 focus:ring-ring"
+						className={ inputClass }
 			      value={form.username}
 			      disabled={submitting}
 			      onChange={(event) => {
@@ -70,7 +71,7 @@ export default function LoginForm({createNew, onSubmit }: LoginFormProps) {
 	          id="email"
 	          name="email"
 	          type="text"
-						className="border rounded-md p-2 w-full h-8 bg-gray-200 focus:outline-none focus:ring-2 focus:ring-ring"
+						className={ inputClass }
 	          value={form.email}
 	          disabled={submitting}
 	          onChange={(event) => {
@@ -84,7 +85,7 @@ export default function LoginForm({createNew, onSubmit }: LoginFormProps) {
 	          id="password"
 	          name="password"
 	          type="text"
-						className="border rounded-md p-2 w-full h-8 bg-gray-200 focus:outline-none focus:ring-2 focus:ring-ring"
+						className={ inputClass }
 	          value={form.password}
 	          disabled={submitting}
 	          onChange={(event) => {
@@ -98,7 +99,7 @@ export default function LoginForm({createNew, onSubmit }: LoginFormProps) {
 			    	id="confirm"
 			      name="confirm"
 			      type="text"
-						className="border rounded-md p-2 w-full h-8 bg-gray-200 focus:outline-none focus:ring-2 focus:ring-ring"
+						className={ inputClass }
 			      value={form.confirmPass}
 			      disabled={submitting}
 			      onChange={(event) => {
@@ -106,7 +107,7 @@ export default function LoginForm({createNew, onSubmit }: LoginFormProps) {
 			      }}
 			    />
 				</div>}
-        <Button type="submit" disabled={submitting} className="border-2 rounded-full text-gray-200 bg-cyan-900 border-cyan-400">
+        <Button type="submit" disabled={submitting} className={submitClass}>
           {createNew ? "Create New Account" : "Sign In"}
         </Button>
 	    </form>
