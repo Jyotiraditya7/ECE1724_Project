@@ -6,7 +6,8 @@ import type { User, LoginFormData } from "../types";
 import { useNavigate } from "react-router";
 import { Separator } from "../components/ui/separator";
 import { Button } from "../components/ui/button";
-import { headerClass, h1Class, formHeaderClass, clickableText, pageContainerClass } from "../lib/ui";
+import { formHeaderClass, clickableText, pageContainerClass } from "../lib/ui";
+import Banner from "../components/Banner";
 
 const TEMP_dummy_creds: User = {
 	id: "demo-user",
@@ -94,9 +95,7 @@ export default function Login() {
 
 	return (
 		<div className={pageContainerClass}>
-			<header className={headerClass}>
-				<h1 className={h1Class}>Stock Watch</h1>
-			</header>
+			<Banner/>
 			<div className='lg:w-1/3 w-1/2 lg:mt-20 sm:mt-15 mt-0 px-5 pt-2 pb-3 border-3 rounded-lg bg-blue-200  border-cyan-900 '>
 				<p className={formHeaderClass}>{createNew ? "Sign up for Stock Watch" : "Login to your account"}</p>
 				<Separator className="bg-gray-400" />

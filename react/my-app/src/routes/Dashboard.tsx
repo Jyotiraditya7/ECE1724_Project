@@ -1,11 +1,12 @@
 import WatchCard from "../components/WatchCard";
 import WatchForm from "../components/WatchForm";
+import Banner from "../components/Banner";
 import { useNavigate, useParams } from "react-router";
 import { useEffect, useState } from "react";
 import type { Watch, WatchPayload} from "../types";
 import { ButtonGroup } from "../components/ui/button-group";
 import { Button } from "../components/ui/button";
-import { headerClass, h1Class, pageContainerClass, errorMsgClass, msgClass, buttonClass } from "../lib/ui";
+import { pageContainerClass, errorMsgClass, msgClass, buttonClass, h2Class } from "../lib/ui";
 
 export default function Dashboard() {
 	const params = useParams();
@@ -90,11 +91,9 @@ export default function Dashboard() {
 
 	return (
 		<div className={pageContainerClass}>
-			<header className={headerClass}>
-				<h1 className={h1Class}>Stock Watch</h1>
-			</header>
+			<Banner/>
 			<div className='flex-col justify-items-center lg:w-2/3 w-full px-5 py-3 space-y-6 border-3 rounded-lg bg-blue-200  border-cyan-900 '>
-				<h2 className="lg:text-3xl text-2xl font-medium text-gray-800">{`Welcome Back ${params.id}`}</h2>
+				<h2 className={h2Class}>{`Welcome Back ${params.id}`}</h2>
 				{loading ? (
 					<div className={msgClass}>Loading StockWatches...</div>
 	      ) : loadError ? (
