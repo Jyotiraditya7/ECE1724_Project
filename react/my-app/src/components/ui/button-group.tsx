@@ -80,8 +80,10 @@ function ButtonGroupSeparator({
 }
 
 export {
-  ButtonGroup,
-  ButtonGroupSeparator,
-  ButtonGroupText,
-  buttonGroupVariants,
+	ButtonGroup,
+	ButtonGroupSeparator,
+	ButtonGroupText
 }
+/*
+  buttonGroupVariants,
+}*/
