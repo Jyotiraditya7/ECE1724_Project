@@ -71,12 +71,13 @@ export default function LoginForm({watch, locked, onSubmit}: WatchFormProps) {
 			setError("Error: Please input a valid Gain Alert %\n(No Exponentials");
 			return;
 		}
-		if (Number(form.gainPct) < 0) {
-			setError("Error: Gain Alert % must be >= 0");
+		// The backend rejects a gain threshold of 0
+		if (Number(form.gainPct) <= 0) {
+			setError("Error: Gain Alert % must be greater than 0");
 			return;
 		}
 
-		// loss% cannot have exponentials and must be negative
+		// loss% cannot have exponentials. It is entered as a positive number and sent as negative
 		if (form.lossPct.trim().length == 0) {
 			setError("Error: Please input a Loss Alert %");
 			return;
