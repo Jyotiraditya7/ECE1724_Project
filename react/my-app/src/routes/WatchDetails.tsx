@@ -201,7 +201,8 @@ export default function WatchDetails() {
 								ticker: watch.ticker,
 								purchasePrice: watch.purchasePrice.toString(),
 								gainPct: watch.gainPct.toString(),
-								lossPct: watch.lossPct.toString()
+								// The API stores the loss threshold as 0 or negative, but the form takes a positive number
+								lossPct: Math.abs(watch.lossPct).toString()
 							}}
 							locked={locked}
 						onSubmit={handleSubmit} />
