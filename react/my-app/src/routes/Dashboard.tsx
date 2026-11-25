@@ -221,10 +221,6 @@ export default function Dashboard() {
 						</ButtonGroup>
 					</>
 				)}
-				{!loadError &&	<ButtonGroup>
-					<Button type='button' onClick={handleExport} disabled={locked} className={buttonClass}>Download Portfolio</Button>
-						<Button type='button' onClick={handleImport} disabled={locked} className={buttonClass}>Upload Portfolio</Button>
-				</ButtonGroup>}
 				{/*Dismissable Status and Error messages*/}
 				{!loadError && statusMsg && <Button
 					type='button'
