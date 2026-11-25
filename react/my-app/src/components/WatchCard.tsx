@@ -7,7 +7,7 @@ type WatchCardProps = {
 	id: number;
 	ticker: string;
 	triggered: boolean;
-	changePct: number;
+	changePct: number | null;	// null until the backend has a price for the stock
 	locked: boolean;
 	onView: (id: number) => void;
 	onDelete: (id: number, ticker:string) => void;
@@ -27,7 +27,7 @@ export default function WatchCard({ id, ticker, triggered, changePct, locked, on
 				<button type='button' disabled={locked} onClick={()=>onView(id)} className={clickableText}>View Details</button>
 			</div>
 			{/*If price updates exist, show Change Pct Label in the middle. Else, (ie. new watch) display a div with N/A */}
-			{changePct ? <ChangePctLabel pct={changePct} /> : <div className="w-min h-min px-3 self-center border-2 rounded-full font-bold text-xl text-gray-400 bg-cyan-800 border-cyan-900">N/A</div>}
+			{changePct != null ? <ChangePctLabel pct={changePct} /> : <div className="w-min h-min px-3 self-center border-2 rounded-full font-bold text-xl text-gray-400 bg-cyan-800 border-cyan-900">N/A</div>}
 			{/*Delete Button*/}
 			<Button type='button' disabled={locked} onClick={()=>{onDelete(id, ticker)}} className="w-7 h-7 border-2 text-white bg-red-700 hover:text-red-400 hover:bg-cyan-950 hover:border-red-600">X</Button>
 		</div>
