@@ -187,14 +187,6 @@ export default function Dashboard() {
 			<Banner/>
 			<div className='flex-col justify-items-center lg:w-2/3 w-full px-5 py-3 space-y-6 border-3 rounded-lg bg-blue-200  border-cyan-900 '>
 				<h2 className={h2Class}>{`Welcome Back ${params.id}`}</h2>
-				{/*Dismissable Status and Error messages*/}
-				{!loadError && statusMsg && <Button
-					type='button'
-					onClick={() => setStatusMsg(null)}
-					className={`p-2 border-2 rounded-full bg-gray-200  border-cyan-800 ${statusMsg.includes('Error') ? errStatusMsgClass : statusMsgClass}`}
-				>
-					{statusMsg}
-				</Button>}
 				{/*Non-Dismissable Status/Error messages + WatchCard list*/}
 				{loading ? (
 					<div className={msgClass}>Loading StockWatches...</div>
@@ -229,6 +221,18 @@ export default function Dashboard() {
 						</ButtonGroup>
 					</>
 				)}
+				{!loadError &&	<ButtonGroup>
+					<Button type='button' onClick={handleExport} disabled={locked} className={buttonClass}>Download Portfolio</Button>
+						<Button type='button' onClick={handleImport} disabled={locked} className={buttonClass}>Upload Portfolio</Button>
+				</ButtonGroup>}
+				{/*Dismissable Status and Error messages*/}
+				{!loadError && statusMsg && <Button
+					type='button'
+					onClick={() => setStatusMsg(null)}
+					className={`p-2 border-2 rounded-full bg-gray-200  border-cyan-800 ${statusMsg.includes('Error') ? errStatusMsgClass : statusMsgClass}`}
+				>
+					{statusMsg}
+				</Button>}
 				{/*Create Watch Form*/}
 				{!loadError && <WatchForm onSubmit={handleCreate} locked={locked}></WatchForm>}
 				{/*Logout Button */}
